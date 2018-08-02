@@ -1,0 +1,16 @@
+[paths]
+source =
+   src/authentic
+   */site-packages/authentic
+
+[run]
+branch = true
+source =
+    authentic
+    tests
+parallel = true
+
+[report]
+show_missing = true
+precision = 2
+omit = *migrations*
