@@ -1,1 +1,4 @@
+passlib==1.7.1
+pyotp==2.2.6
+click==6.7
 -r requirements/dev.txt

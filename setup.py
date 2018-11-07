@@ -62,7 +62,10 @@ setup(
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
     install_requires=[
-        'click',
+        'click==6.7',
+        'passlib==1.7.1',
+        'pyotp==2.2.6',
+        'protean==0.0.5'
         # eg: 'aspectlib==1.1.1', 'six>=1.7',
     ],
     extras_require={
