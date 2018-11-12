@@ -5,16 +5,14 @@ import uuid
 import pyotp
 from passlib.hash import pbkdf2_sha256
 
-from protean.integrations.email import EmailHelper
 from protean.core.transport import (InvalidRequestObject, ValidRequestObject)
-from protean.core.transport import ResponseSuccess, ResponseFailure
-from protean.integrations.sms import Sms
+from protean.core.transport import ResponseSuccess, ResponseFailure, Status
 from protean.core.usecase import (UseCase, ShowRequestObject)
 from protean.context import context
 from protean.conf import active_config
 
 from authentic.entities import Account, ROLES
-from authentic.helper import PasswordHandler
+from authentic.helper import validate_new_password
 
 
 class RegisterRequestObject(ValidRequestObject):
@@ -22,12 +20,13 @@ class RegisterRequestObject(ValidRequestObject):
     This class encapsulates the Request Object for self registration
     """
 
-    def __init__(self, data=None):
+    def __init__(self, entity, data=None):
         """Initialize Request Object with form data"""
+        self.entity = entity
         self.data = data
 
     @classmethod
-    def from_dict(cls, adict):
+    def from_dict(cls, entity, adict):
         """Create Request Object from dict"""
         invalid_req = InvalidRequestObject()
 
@@ -38,10 +37,10 @@ class RegisterRequestObject(ValidRequestObject):
         if 'password' not in adict:
             invalid_req.add_error('password', 'Password is mandatory')
 
-        if invalid_req.has_errors():
+        if invalid_req.has_errors:
             return invalid_req
 
-        return RegisterRequestObject(adict)
+        return RegisterRequestObject(entity, adict)
 
 
 class RegisterUseCase(UseCase):
@@ -53,40 +52,29 @@ class RegisterUseCase(UseCase):
         """Process Create Account Request"""
         data = request_object.data
 
-        if self.repo.find_by(('email', data['email'])):
-            return ResponseFailure.build_unprocessable_error({'email': 'Email already exists'})
+        if self.repo.filter(email=data['email']):
+            return ResponseFailure.build_unprocessable_error(
+                {'email': 'Email already exists'})
 
-        if self.repo.find_by(('username', data['username'])):
+        if self.repo.filter(username=data['username']):
             return ResponseFailure.build_unprocessable_error(
                 {'username': 'Username already exists'})
 
-        password_check = validate_new_password(
-            self.repo_factory.get_repo('tenant'),
-            data['password'], [])
+        password_check = validate_new_password(data['password'], [])
         if not password_check['is_valid']:
-            return ResponseFailure.build_unprocessable_error({'password': password_check['error']})
+            return ResponseFailure.build_unprocessable_error(
+                {'password': password_check['error']})
 
-        account = Account(username=data['username'],
-                          password=pbkdf2_sha256.hash(data['password']),
-                          name=data.get('name', ''),
-                          roles=data.get('roles', ''),
-                          email=data.get('email', ''),
-                          phone=data.get('phone', ''),
-                          tenant_id=context.tenant_id,
-                          is_verified=False,
-                          created_at=datetime.datetime.now(),
-                          updated_at=datetime.datetime.now())
+        account = dict(username=data.pop('username'),
+                       password=pbkdf2_sha256.hash(data.pop('password')),
+                       name=data.pop('name', ''),
+                       roles=data.pop('roles', ''),
+                       email=data.pop('email', ''),
+                       phone=data.pop('phone', ''),
+                       is_verified=False, **data)
 
         account = self.repo.create(account)
-
-        if account:
-            send_account_verfication_link = SendAccountVerificationLinkUseCase(self.repo_factory)
-            send_account_verfication_link.execute({
-                "account": account,
-                "host_url": data.get('host_url')
-            })
-
-        return ResponseSuccess(account)
+        return ResponseSuccess(Status.SUCCESS, account)
 
 
 class CreateAccountRequestObject(ValidRequestObject):
@@ -94,8 +82,9 @@ class CreateAccountRequestObject(ValidRequestObject):
     This class encapsulates the Request Object for Creating Accounts
     """
 
-    def __init__(self, data=None):
+    def __init__(self, entity, data=None):
         """Initialize Request Object with form data"""
+        self.entity = entity
         self.data = data
 
     @classmethod
@@ -115,7 +104,8 @@ class CreateAccountRequestObject(ValidRequestObject):
             if 'password' not in adict:
                 invalid_req.add_error('password', 'Password is mandatory')
             if 'confirm_password' not in adict:
-                invalid_req.add_error('confirm_password', 'Confirm password is mandatory')
+                invalid_req.add_error(
+                    'confirm_password', 'Confirm password is mandatory')
             else:
                 if adict['password'] != adict['confirm_password']:
                     invalid_req.add_error(
@@ -152,7 +142,8 @@ class CreateAccountUseCase(UseCase):
         is_idp_login = request_object.data.get('is_idp', False)
 
         if self.repo.find_by(('email', data['email'])):
-            return ResponseFailure.build_unprocessable_error({'email': 'Email already exists'})
+            return ResponseFailure.build_unprocessable_error(
+                {'email': 'Email already exists'})
 
         if not is_idp_login:
             if self.repo.find_by(('username', data['username'])):
@@ -212,7 +203,8 @@ class UpdateAccountRequestObject(ValidRequestObject):
             data = adict['data']
             if 'password' in data:
                 if 'confirm_password' not in data:
-                    invalid_req.add_error('confirm_password', 'Confirm password is mandatory')
+                    invalid_req.add_error('confirm_password',
+                                          'Confirm password is mandatory')
                 else:
                     if data['password'] != data['confirm_password']:
                         invalid_req.add_error('confirm_password',
@@ -239,14 +231,15 @@ class UpdateAccountUseCase(UseCase):
         """Process update Account Request"""
         account_obj = self.repo.get(request_object.identifier)
         if (request_object.data.get('email') and
-                account_obj.email != request_object.data.get('email') and
-                self.repo.find_by(('email', request_object.data['email']))):
+            account_obj.email != request_object.data.get('email') and
+            self.repo.find_by(('email', request_object.data['email']))):
             return ResponseFailure.build_unprocessable_error(
                 {'email': 'Email already exists'})
 
         if (request_object.data.get('username') and
-                account_obj.username != request_object.data.get('username')
-                and self.repo.find_by(('username', request_object.data['username']))):
+            account_obj.username != request_object.data.get('username')
+            and self.repo.find_by(
+                ('username', request_object.data['username']))):
             return ResponseFailure.build_unprocessable_error(
                 {'username': 'Username already exists'})
 
@@ -291,13 +284,15 @@ class ChangeAccountPasswordRequestObject(ValidRequestObject):
         if 'identifier' not in adict:
             invalid_req.add_error('identifier', 'ID is mandatory')
         if 'current_password' not in data:
-            invalid_req.add_error('current_password', 'Current password is mandatory')
+            invalid_req.add_error('current_password',
+                                  'Current password is mandatory')
         new_password = data.get('new_password')
         if new_password is None:
             invalid_req.add_error('new_password', 'New password is mandatory')
         confirm_password = data.get('confirm_password')
         if new_password and confirm_password and new_password != confirm_password:
-            invalid_req.add_error('confirm_password', 'Password and Confirm password must be same')
+            invalid_req.add_error('confirm_password',
+                                  'Password and Confirm password must be same')
 
         if invalid_req.has_errors():
             return invalid_req
@@ -332,7 +327,8 @@ class ChangeAccountPasswordUseCase(UseCase):
                     account.password_history)
                 self.repo.update(
                     request_object.identifier,
-                    {'password': password, 'password_history': password_history})
+                    {'password': password,
+                     'password_history': password_history})
                 return ResponseSuccess({"message": "Success"})
             else:
                 return ResponseFailure.build_unprocessable_error(
@@ -382,12 +378,14 @@ class SendResetPasswordEmailUsecase(UseCase):
         if account:
             token = str(uuid.uuid4())
 
-            reset_link = "{}reset_password/{}".format(request_object.host_url, token)
+            reset_link = "{}reset_password/{}".format(request_object.host_url,
+                                                      token)
             self.repo.update(
                 account.id,
                 {
                     "verification_token": token,
-                    "token_timestamp": datetime.datetime.now() + datetime.timedelta(hours=24)})
+                    "token_timestamp": datetime.datetime.now() + datetime.timedelta(
+                        hours=24)})
 
             payload = {
                 "email": email,
@@ -438,7 +436,8 @@ class VerifyTokenUseCase(UseCase):
             token_time = datetime.datetime.strptime(account.token_timestamp,
                                                     "%Y-%m-%dT%H:%M:%S.%f")
             if datetime.datetime.now() > token_time:
-                return ResponseFailure.build_unprocessable_error("Token expired")
+                return ResponseFailure.build_unprocessable_error(
+                    "Token expired")
             else:
                 self.repo.update(account.id, {"is_verified": True})
                 return ResponseSuccess({"message": "Valid Token"})
@@ -468,9 +467,11 @@ class ResetPasswordRequestObject(ValidRequestObject):
             invalid_req.add_error('new_password', 'New password is mandatory')
         confirm_password = data.get('confirm_password')
         if confirm_password is None:
-            invalid_req.add_error('confirm_password', 'Confirm password is mandatory')
+            invalid_req.add_error('confirm_password',
+                                  'Confirm password is mandatory')
         if new_password and confirm_password and new_password != confirm_password:
-            invalid_req.add_error('new_password', 'New password and Confirm password are not same')
+            invalid_req.add_error('new_password',
+                                  'New password and Confirm password are not same')
 
         if invalid_req.has_errors():
             return invalid_req
@@ -537,7 +538,8 @@ class AuthenticateRequestObject(ValidRequestObject):
         username_or_email = password = None
 
         if 'username_or_email' not in adict:
-            invalid_req.add_error('username_or_email', 'Username or Email is mandatory')
+            invalid_req.add_error('username_or_email',
+                                  'Username or Email is mandatory')
         else:
             username_or_email = adict['username_or_email']
 
@@ -560,22 +562,24 @@ class AuthenticateUseCase(UseCase):
         account = self.repo.find_by([
             ('username.raw', request_object.username_or_email),
             ('tenant_id', context.tenant_id)
-            ], True)
+        ], True)
         if not account:
             account = self.repo.find_by([
                 ('email', request_object.username_or_email),
                 ('tenant_id', context.tenant_id)
-                ], True)
+            ], True)
             if not account:
                 return False, 401
 
         if not account.is_locked:
-            if ResponseSuccess(pbkdf2_sha256.verify(request_object.password, account.password)) \
-                    .value:
+            if ResponseSuccess(
+                pbkdf2_sha256.verify(request_object.password, account.password)) \
+                .value:
                 if account.is_verified:
                     return account, 200
 
-                send_account_verification_link = SendAccountVerificationLinkUseCase(self.repo)
+                send_account_verification_link = SendAccountVerificationLinkUseCase(
+                    self.repo)
                 send_account_verification_link.execute({
                     "account": account
                 })
@@ -583,7 +587,8 @@ class AuthenticateUseCase(UseCase):
                     {'account': 'Account is not verified'})
             else:
                 tenant_repo = self.repo_factory.get_repo('tenant')
-                allowed_login_attempts = tenant_repo.get(account.tenant_id, True) \
+                allowed_login_attempts = \
+                tenant_repo.get(account.tenant_id, True) \
                     .password_rules['max_invalid_attempts']
                 login_attempts = account.__dict__.get('login_attempts', None)
                 if login_attempts and login_attempts >= allowed_login_attempts:
@@ -591,7 +596,8 @@ class AuthenticateUseCase(UseCase):
                     return False, 422
                 else:
                     login_attempts = (login_attempts or 0) + 1
-                    self.repo.update(account.id, {'login_attempts': login_attempts})
+                    self.repo.update(account.id,
+                                     {'login_attempts': login_attempts})
                     return False, 401
         else:
             return False, 422
@@ -604,11 +610,13 @@ class SendAccountVerificationLinkUseCase(UseCase):
         account = request_object['account']
         token = str(uuid.uuid4())
 
-        verification_link = "{}account_verification/{}".format(request_object['host_url'], token)
+        verification_link = "{}account_verification/{}".format(
+            request_object['host_url'], token)
         self.repo.update(
             account.id,
             {"verification_token": token,
-             "token_timestamp": datetime.datetime.now() + datetime.timedelta(hours=24)})
+             "token_timestamp": datetime.datetime.now() + datetime.timedelta(
+                 hours=24)})
 
         subject = "Almost there.. Verify email now!"
 
@@ -670,7 +678,7 @@ class ValidateAccountUseCase(UseCase):
 
     def process_request(self, request_object):
         if self.repo.find_by(
-                (request_object.key, request_object.value)):
+            (request_object.key, request_object.value)):
             return ResponseSuccess(
                 {'message': '%s already exists.' % request_object.key})
         return ResponseFailure.build_not_found(
@@ -713,7 +721,8 @@ class GenerateTemporaryTokenUseCase(UseCase):
         self.repo.update(
             account.id,
             {"temp_token": token,
-             "temp_token_timestamp": datetime.datetime.now() + datetime.timedelta(hours=1)})
+             "temp_token_timestamp": datetime.datetime.now() + datetime.timedelta(
+                 hours=1)})
 
         return ResponseSuccess({"temp_token": token})
 
@@ -728,10 +737,12 @@ class VerifyTempTokenUseCase(UseCase):
         account = self.repo.find_by(('temp_token', token))
 
         if account:
-            token_time = datetime.datetime.strptime(account.temp_token_timestamp,
-                                                    "%Y-%m-%dT%H:%M:%S.%f")
+            token_time = datetime.datetime.strptime(
+                account.temp_token_timestamp,
+                "%Y-%m-%dT%H:%M:%S.%f")
             if datetime.datetime.now() > token_time:
-                return ResponseFailure.build_unprocessable_error("Token expired")
+                return ResponseFailure.build_unprocessable_error(
+                    "Token expired")
 
             return ResponseSuccess({"message": "Valid Token"})
 
@@ -752,7 +763,8 @@ class GetAccountTenantRequestObject(ValidRequestObject):
         invalid_req = InvalidRequestObject()
 
         if 'username_or_email' not in adict:
-            invalid_req.add_error('username or email', 'username or email is mandatory')
+            invalid_req.add_error('username or email',
+                                  'username or email is mandatory')
 
         if invalid_req.has_errors():
             return invalid_req
@@ -873,29 +885,4 @@ class VerifyMfaOtpUseCase(UseCase):
         return ResponseSuccess({"message": "Valid OTP"})
 
 
-def validate_new_password(repo_factory, new_password, old_password_list):
-    """Validate New Password"""
 
-    password_config = repo_factory.repo.get(context.tenant_id, True).password_rules
-    password_handler = PasswordHandler(password_config)
-    response = password_handler.is_valid(new_password, old_password_list)
-    if response['message'] == 'Valid password':
-        response['is_valid'] = True
-    else:
-        response['is_valid'] = False
-
-    return response
-
-
-def modify_password_history(repo_factory, old_password, input_password_history):
-    """Tweak Password History"""
-
-    password_history = input_password_history[:]
-    password_config = repo_factory.repo.get(context.tenant_id, True).password_rules
-    extra_count = len(password_history) - password_config['min_topology_changes']
-    if extra_count >= 0:
-        for _ in range(extra_count + 1):
-            password_history.pop(0)
-    password_history.append(old_password)
-
-    return password_history
