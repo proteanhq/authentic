@@ -315,9 +315,9 @@ class SendResetPasswordEmailUsecase(UseCase):
                 "reset_link": reset_link
             }
 
-            EmailHelper.send_email(
-                payload,
-                getattr(active_config, 'RESET_PASSWORD_MAIL_TEMPLATE', None))
+            # EmailHelper.send_email(
+            #     payload,
+            #     getattr(active_config, 'RESET_PASSWORD_MAIL_TEMPLATE', None))
 
         return ResponseSuccess({"message": "Success"})
 
@@ -549,183 +549,18 @@ class SendAccountVerificationLinkUseCase(UseCase):
                 "verification_link": verification_link
             }
 
-            EmailHelper.send_email(
-                payload,
-                getattr(active_config, 'VERIFICATION_MAIL_TEMPLATE', None))
+            # EmailHelper.send_email(
+            #     payload,
+            #     getattr(active_config, 'VERIFICATION_MAIL_TEMPLATE', None))
 
         elif account.phone:
             payload = {
                 "to": account.phone,
                 "body": verification_link
             }
-            Sms.send_sms(payload)
+            # Sms.send_sms(payload)
 
         return ResponseSuccess({"message": "Verification link sent"})
-
-
-class ValidateAccountRequestObject(ValidRequestObject):
-    """
-    This class encapsulates the Request Object for Validate Account
-    """
-
-    def __init__(self, key, value):
-        """Initialize Request Object with parameters"""
-        self.key = key
-        self.value = value
-
-    @classmethod
-    def from_dict(cls, adict):
-        invalid_req = InvalidRequestObject()
-
-        if 'key' not in adict:
-            invalid_req.add_error('key', 'Key is mandatory')
-        else:
-            key = adict.get('key')
-
-        if 'value' not in adict:
-            invalid_req.add_error('value', 'Value is mandatory')
-        else:
-            value = adict.get('value')
-
-        if invalid_req.has_errors():
-            return invalid_req
-
-        return ValidateAccountRequestObject(key, value)
-
-
-class ValidateAccountUseCase(UseCase):
-    """
-    This class implements the usecase for validate account email and username uniqueness
-    """
-
-    def process_request(self, request_object):
-        if self.repo.find_by(
-            (request_object.key, request_object.value)):
-            return ResponseSuccess(
-                {'message': '%s already exists.' % request_object.key})
-        return ResponseFailure.build_not_found(
-            {'message': '%s not found' % request_object.key})
-
-
-class GenerateTempTokenRequestObject(ValidRequestObject):
-    """
-    This class implements the usecase for generating temp token
-    """
-
-    def __init__(self, identifier=None):
-        """Initialize Request Object with form data"""
-        self.identifier = identifier
-
-    @classmethod
-    def from_dict(cls, adict):
-        invalid_req = InvalidRequestObject()
-
-        if 'identifier' not in adict:
-            invalid_req.add_error('identifier', 'ID is mandatory')
-
-        if invalid_req.has_errors():
-            return invalid_req
-
-        identifier = adict['identifier']
-
-        return GenerateTempTokenRequestObject(identifier)
-
-
-class GenerateTemporaryTokenUseCase(UseCase):
-    """Generate temporary token"""
-
-    def process_request(self, request_object):
-        identifier = request_object.identifier
-        account = self.repo.get(identifier)
-
-        token = str(uuid.uuid4())
-
-        self.repo.update(
-            account.id,
-            {"temp_token": token,
-             "temp_token_timestamp": datetime.datetime.now() + datetime.timedelta(
-                 hours=1)})
-
-        return ResponseSuccess({"temp_token": token})
-
-
-class VerifyTempTokenUseCase(UseCase):
-    """
-    This class implements the usecase for verifying token
-    """
-
-    def process_request(self, request_object):
-        token = request_object['token']
-        account = self.repo.find_by(('temp_token', token))
-
-        if account:
-            token_time = datetime.datetime.strptime(
-                account.temp_token_timestamp,
-                "%Y-%m-%dT%H:%M:%S.%f")
-            if datetime.datetime.now() > token_time:
-                return ResponseFailure.build_unprocessable_error(
-                    "Token expired")
-
-            return ResponseSuccess({"message": "Valid Token"})
-
-        return ResponseFailure.build_unprocessable_error("Invalid Token")
-
-
-class GetAccountTenantRequestObject(ValidRequestObject):
-    """
-    This class implements the request object for Account Tenant usecase
-    """
-
-    def __init__(self, username_or_email=None):
-        """Initialize Request Object with form data"""
-        self.username_or_email = username_or_email
-
-    @classmethod
-    def from_dict(cls, adict):
-        invalid_req = InvalidRequestObject()
-
-        if 'username_or_email' not in adict:
-            invalid_req.add_error('username or email',
-                                  'username or email is mandatory')
-
-        if invalid_req.has_errors():
-            return invalid_req
-
-        username_or_email = adict['username_or_email']
-
-        return GetAccountTenantRequestObject(username_or_email)
-
-
-class GetAccountTenantUseCase(UseCase):
-    """Get tenant details of account"""
-
-    def process_request(self, request_object):
-        username_or_email = request_object.username_or_email
-        query = {
-            "query": {
-                "multi_match": {
-                    "query": username_or_email,
-                    "fields": ["email", "username"]
-                }
-            }
-        }
-        result = self.repo.search_query(page=1, query=query)
-        if result['total'] > 0:
-            account = result['data'][0]
-            tenant_ids = account.tenant_id
-            if not isinstance(tenant_ids, list):
-                tenant_ids = [str(tenant_ids)]
-
-            tenant_repo = self.repo_factory.get_repo('tenant')
-            tenant_list = []
-            for tenant_id in tenant_ids:
-                tenant = tenant_repo.get(str(tenant_id), True)
-                tenant_list.append({"id": tenant_id, "name": tenant.name})
-
-            return ResponseSuccess(tenant_list)
-        else:
-            return ResponseFailure.build_unprocessable_error(
-                "No account found by this username or email")
 
 
 class GenerateMfaUriForQrCodeRequestObject(ShowRequestObject):
