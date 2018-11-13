@@ -1,17 +1,7 @@
 """Account and Authentication Entities"""
 
-from enum import Enum
-
 from protean.core.entity import Entity
 from protean.core import field
-
-
-class Role(Enum):
-    """Enum class for storing Account Roles"""
-    ADMIN = 'ADMIN'
-
-
-ROLES = [role.value for role in Role]
 
 
 class Account(Entity):
@@ -19,7 +9,7 @@ class Account(Entity):
     This class initializes an Account Entity.
     """
     id = field.Auto(identifier=True)
-
+    roles = field.List()
     username = field.String(required=True)
     password = field.String(required=True)
     email = field.String(required=True)
@@ -29,6 +19,7 @@ class Account(Entity):
     timezone = field.String()
     is_locked = field.Boolean(default=False)
     is_active = field.Boolean(default=True)
+    is_verified = field.Boolean(default=False)
     login_attempts = field.Integer(default=0)
     password_history = field.List()
     is_idp = field.Boolean(default=False)

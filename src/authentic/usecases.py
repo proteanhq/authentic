@@ -6,13 +6,14 @@ import pyotp
 from passlib.hash import pbkdf2_sha256
 
 from protean.core.transport import (InvalidRequestObject, ValidRequestObject)
-from protean.core.transport import ResponseSuccess, ResponseFailure, Status
-from protean.core.usecase import (UseCase, ShowRequestObject)
+from protean.core.transport import ResponseSuccess, ResponseSuccessCreated,\
+    ResponseFailure, Status
+from protean.core.usecase import (UseCase, ShowRequestObject,
+                                  UpdateRequestObject, UpdateUseCase)
 from protean.context import context
 from protean.conf import active_config
 
-from authentic.entities import Account, ROLES
-from authentic.helper import validate_new_password
+from authentic.helper import validate_new_password, modify_password_history
 
 
 class RegisterRequestObject(ValidRequestObject):
@@ -20,13 +21,13 @@ class RegisterRequestObject(ValidRequestObject):
     This class encapsulates the Request Object for self registration
     """
 
-    def __init__(self, entity, data=None):
+    def __init__(self, entity_cls, data=None):
         """Initialize Request Object with form data"""
-        self.entity = entity
+        self.entity_cls = entity_cls
         self.data = data
 
     @classmethod
-    def from_dict(cls, entity, adict):
+    def from_dict(cls, entity_cls, adict):
         """Create Request Object from dict"""
         invalid_req = InvalidRequestObject()
 
@@ -40,7 +41,7 @@ class RegisterRequestObject(ValidRequestObject):
         if invalid_req.has_errors:
             return invalid_req
 
-        return RegisterRequestObject(entity, adict)
+        return RegisterRequestObject(entity_cls, adict)
 
 
 class RegisterUseCase(UseCase):
@@ -65,16 +66,9 @@ class RegisterUseCase(UseCase):
             return ResponseFailure.build_unprocessable_error(
                 {'password': password_check['error']})
 
-        account = dict(username=data.pop('username'),
-                       password=pbkdf2_sha256.hash(data.pop('password')),
-                       name=data.pop('name', ''),
-                       roles=data.pop('roles', ''),
-                       email=data.pop('email', ''),
-                       phone=data.pop('phone', ''),
-                       is_verified=False, **data)
-
-        account = self.repo.create(account)
-        return ResponseSuccess(Status.SUCCESS, account)
+        data['password'] = pbkdf2_sha256.hash(data['password'])
+        account = self.repo.create(data)
+        return ResponseSuccessCreated(account)
 
 
 class CreateAccountRequestObject(ValidRequestObject):
@@ -82,13 +76,13 @@ class CreateAccountRequestObject(ValidRequestObject):
     This class encapsulates the Request Object for Creating Accounts
     """
 
-    def __init__(self, entity, data=None):
+    def __init__(self, entity_cls, data=None):
         """Initialize Request Object with form data"""
-        self.entity = entity
+        self.entity_cls = entity_cls
         self.data = data
 
     @classmethod
-    def from_dict(cls, adict):
+    def from_dict(cls, entity_cls, adict):
         invalid_req = InvalidRequestObject()
         is_idp_login = False
 
@@ -113,22 +107,15 @@ class CreateAccountRequestObject(ValidRequestObject):
                         'Password and Confirm password must be same')
                 else:
                     del adict['confirm_password']
-            if 'phone' not in adict:
-                invalid_req.add_error('phone', 'Phone is mandatory')
 
         if 'roles' in adict:
-            if isinstance(adict['roles'], str):
-                if adict['roles'] not in ROLES:
-                    invalid_req.add_error('roles', 'Invalid role(s)')
+            if not set(adict['roles']).issubset(active_config.ROLES):
+                invalid_req.add_error('roles', 'Invalid role(s)')
 
-            if isinstance(adict['roles'], list):
-                if not set(adict['roles']).issubset(ROLES):
-                    invalid_req.add_error('roles', 'Invalid role(s)')
-
-        if invalid_req.has_errors():
+        if invalid_req.has_errors:
             return invalid_req
 
-        return CreateAccountRequestObject(adict)
+        return CreateAccountRequestObject(entity_cls, adict)
 
 
 class CreateAccountUseCase(UseCase):
@@ -141,88 +128,45 @@ class CreateAccountUseCase(UseCase):
         data = request_object.data
         is_idp_login = request_object.data.get('is_idp', False)
 
-        if self.repo.find_by(('email', data['email'])):
+        if self.repo.filter(email=data['email']):
             return ResponseFailure.build_unprocessable_error(
                 {'email': 'Email already exists'})
 
         if not is_idp_login:
-            if self.repo.find_by(('username', data['username'])):
+            if self.repo.filter(username=data['username']):
                 return ResponseFailure.build_unprocessable_error(
                     {'username': 'Username already exists'})
 
-            password_check = validate_new_password(
-                self.repo_factory.get_repo('tenant'),
-                data['password'], [])
+            password_check = validate_new_password(data['password'], [])
             if not password_check['is_valid']:
                 return ResponseFailure.build_unprocessable_error(
                     {'password': password_check['error']})
 
-        account = Account(
-            username=data.get('username', ''),
-            password=pbkdf2_sha256.hash(data.get('password', '')),
-            name=data.get('name', ''),
-            title=data.get('title', ''),
-            roles=data.get('roles', ''),
-            location=data.get('location', None),
-            email=data.get('email', ''),
-            phone=data.get('phone', ''),
-            is_idp=data.get('is_idp', False),
-            is_verified=True,
-            created_by=data.get('user_id'),
-            updated_by=data.get('user_id'),
-            created_at=datetime.datetime.now(),
-            updated_at=datetime.datetime.now(),
-            customer_id=data.get('customer_id'),
-            timezone=data.get('timezone', '')
-        )
-        account = self.repo.create(account)
+        data['password'] = pbkdf2_sha256.hash(data['password'])
+        account = self.repo.create(data)
 
-        return ResponseSuccess(account)
+        return ResponseSuccessCreated(account)
 
 
-class UpdateAccountRequestObject(ValidRequestObject):
+class UpdateAccountRequestObject(UpdateRequestObject):
     """
     This class encapsulates the Request Object for Updating Account
     """
 
-    def __init__(self, cls_entity, identifier=None, data=None):
-        """Initialize Request Object with form data"""
-        self.cls_entity = cls_entity
-        self.data = data
-        self.identifier = identifier
-
     @classmethod
-    def from_dict(cls, cls_entity, adict):
+    def from_dict(cls, entity_cls, adict):
         invalid_req = InvalidRequestObject()
+        if 'roles' in adict:
+            if not set(adict['roles']).issubset(active_config.ROLES):
+                invalid_req.add_error('roles', 'Invalid role(s)')
 
-        if 'identifier' not in adict:
-            invalid_req.add_error('identifier', 'ID is mandatory')
-        if 'data' not in adict:
-            invalid_req.add_error('data', 'Payload is mandatory')
-        else:
-            data = adict['data']
-            if 'password' in data:
-                if 'confirm_password' not in data:
-                    invalid_req.add_error('confirm_password',
-                                          'Confirm password is mandatory')
-                else:
-                    if data['password'] != data['confirm_password']:
-                        invalid_req.add_error('confirm_password',
-                                              'Password and Confirm password must be same')
-                    else:
-                        del data['confirm_password']
-
-        if invalid_req.has_errors():
+        if invalid_req.has_errors:
             return invalid_req
 
-        identifier = adict['identifier']
-        data['updated_at'] = datetime.datetime.now()
-        data['updated_by'] = adict['current_user']
-
-        return UpdateAccountRequestObject(cls_entity, identifier, data)
+        return super().from_dict(entity_cls, adict)
 
 
-class UpdateAccountUseCase(UseCase):
+class UpdateAccountUseCase(UpdateUseCase):
     """
     This class implements the usecase for updating Account
     """
@@ -230,40 +174,17 @@ class UpdateAccountUseCase(UseCase):
     def process_request(self, request_object):
         """Process update Account Request"""
         account_obj = self.repo.get(request_object.identifier)
-        if (request_object.data.get('email') and
-            account_obj.email != request_object.data.get('email') and
-            self.repo.find_by(('email', request_object.data['email']))):
+        if request_object.data.get('email') and \
+                account_obj.email != request_object.data.get('email') and \
+                self.repo.filter(email=request_object.data['email']):
             return ResponseFailure.build_unprocessable_error(
                 {'email': 'Email already exists'})
 
-        if (request_object.data.get('username') and
-            account_obj.username != request_object.data.get('username')
-            and self.repo.find_by(
-                ('username', request_object.data['username']))):
-            return ResponseFailure.build_unprocessable_error(
-                {'username': 'Username already exists'})
+        # Remove fields that cannot be updated
+        for field in ['password', 'username']:
+            request_object.data.pop(field, None)
 
-        if 'password' in request_object.data:
-            password_check = validate_new_password(
-                self.repo_factory.get_repo('tenant'),
-                request_object.data['password'],
-                account_obj.password_history)
-
-            if password_check['is_valid']:
-                request_object.data['password'] = pbkdf2_sha256.hash(
-                    request_object.data['password'])
-                password_history = modify_password_history(
-                    self.repo_factory.get_repo('tenant'),
-                    account_obj.password,
-                    account_obj.password_history)
-                request_object.data['password_history'] = password_history
-            else:
-                return ResponseFailure.build_unprocessable_error(
-                    {'password': password_check['error']})
-
-        account_obj = self.repo.update(
-            request_object.identifier, request_object.data)
-        return ResponseSuccess(account_obj)
+        return super().process_request(request_object)
 
 
 class ChangeAccountPasswordRequestObject(ValidRequestObject):
@@ -290,7 +211,8 @@ class ChangeAccountPasswordRequestObject(ValidRequestObject):
         if new_password is None:
             invalid_req.add_error('new_password', 'New password is mandatory')
         confirm_password = data.get('confirm_password')
-        if new_password and confirm_password and new_password != confirm_password:
+        if new_password and confirm_password and \
+                new_password != confirm_password:
             invalid_req.add_error('confirm_password',
                                   'Password and Confirm password must be same')
 

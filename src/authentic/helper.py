@@ -90,14 +90,12 @@ def validate_new_password(new_password, old_password_list):
     return response
 
 
-def modify_password_history(repo_factory, old_password, input_password_history):
+def modify_password_history(old_password, input_password_history):
     """Tweak Password History"""
 
     password_history = input_password_history[:]
-    password_config = repo_factory.repo.get(context.tenant_id,
-                                            True).password_rules
-    extra_count = len(password_history) - password_config[
-        'min_topology_changes']
+    password_config = active_config.PASSWORD_RULES
+    extra_count = len(password_history) - password_config['min_topology_changes']
     if extra_count >= 0:
         for _ in range(extra_count + 1):
             password_history.pop(0)
