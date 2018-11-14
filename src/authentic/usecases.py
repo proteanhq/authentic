@@ -192,13 +192,14 @@ class ChangeAccountPasswordRequestObject(ValidRequestObject):
     This class implements the request object for changing account password
     """
 
-    def __init__(self, identifier=None, data=None):
+    def __init__(self, entity_cls, identifier=None, data=None):
         """Initialize Request Object with form data"""
+        self.entity_cls = entity_cls
         self.data = data
         self.identifier = identifier
 
     @classmethod
-    def from_dict(cls, adict):
+    def from_dict(cls, entity_cls, adict):
         invalid_req = InvalidRequestObject()
         data = adict['data']
 
@@ -216,12 +217,11 @@ class ChangeAccountPasswordRequestObject(ValidRequestObject):
             invalid_req.add_error('confirm_password',
                                   'Password and Confirm password must be same')
 
-        if invalid_req.has_errors():
+        if invalid_req.has_errors:
             return invalid_req
 
-        identifier = adict['identifier']
-
-        return ChangeAccountPasswordRequestObject(identifier, adict['data'])
+        return ChangeAccountPasswordRequestObject(
+            entity_cls, adict['identifier'], adict['data'])
 
 
 class ChangeAccountPasswordUseCase(UseCase):
@@ -235,23 +235,20 @@ class ChangeAccountPasswordUseCase(UseCase):
         identifier = request_object.identifier
         data = request_object.data
         account = self.repo.get(identifier)
-
+        print(account.password_history)
         if pbkdf2_sha256.verify(data['current_password'], account.password):
             password_check = validate_new_password(
-                self.repo_factory.get_repo('tenant'),
-                data['new_password'],
-                account.password_history)
+                data['new_password'], account.password_history)
             if password_check['is_valid']:
                 password = pbkdf2_sha256.hash(data['new_password'])
                 password_history = modify_password_history(
-                    self.repo_factory.get_repo('tenant'),
                     account.password,
                     account.password_history)
                 self.repo.update(
                     request_object.identifier,
                     {'password': password,
                      'password_history': password_history})
-                return ResponseSuccess({"message": "Success"})
+                return ResponseSuccess(Status.SUCCESS, {"message": "Success"})
             else:
                 return ResponseFailure.build_unprocessable_error(
                     {'password': password_check['error']})

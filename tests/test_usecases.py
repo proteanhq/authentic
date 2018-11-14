@@ -8,7 +8,9 @@ from protean.impl.repository.dict_repo import DictSchema
 from authentic.entities import Account
 from authentic.usecases import (RegisterUseCase, RegisterRequestObject,
                                 CreateAccountRequestObject, CreateAccountUseCase,
-                                UpdateAccountUseCase, UpdateAccountRequestObject)
+                                UpdateAccountUseCase, UpdateAccountRequestObject,
+                                ChangeAccountPasswordUseCase,
+                                ChangeAccountPasswordRequestObject)
 
 
 class AccountSchema(DictSchema):
@@ -138,3 +140,40 @@ class TestAuthenticUsecases:
         assert response.success is True
         assert response.value.id == 10
         assert response.value.phone == '90070000700'
+
+    def test_change_password_usecase(self):
+        """Test change password usecase of authentic"""
+        payload = {
+            'identifier': 10,
+            'data': {
+                'current_password': 'duMmy@123',
+                'new_password': 'duMmy@456',
+                'confirm_password': 'duMmy@456',
+            }
+        }
+        response = Tasklet.perform(
+            repo_factory, AccountSchema, ChangeAccountPasswordUseCase,
+            ChangeAccountPasswordRequestObject, payload.copy())
+
+        assert response is not None
+        assert response.success is True
+
+        # Try to update the password again
+        payload = {
+            'identifier': 10,
+            'data': {
+                'current_password': 'duMmy@456',
+                'new_password': 'duMmy@123',
+                'confirm_password': 'duMmy@123',
+            }
+        }
+        response = Tasklet.perform(
+            repo_factory, AccountSchema, ChangeAccountPasswordUseCase,
+            ChangeAccountPasswordRequestObject, payload.copy())
+
+        assert response is not None
+        assert response.success is False
+        assert response.value == {
+            'code': 422,
+            'message': {'password': 'Password should not match previously '
+                                    'used passwords'}}

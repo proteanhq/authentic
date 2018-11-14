@@ -72,11 +72,6 @@ class PasswordHandler:
         return True
 
 
-def get_account_entity():
-    """ Returns the account entity class used by the """
-    return perform_import(active_config.ACCOUNT_ENTITY)
-
-
 def validate_new_password(new_password, old_password_list):
     """Validate New Password"""
 

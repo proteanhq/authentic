@@ -4,9 +4,6 @@
 class AuthenticConfig:
     """ Default configurations for the Authentic application """
 
-    # The account entity that will be used... defined here to allow overriding
-    ACCOUNT_ENTITY = 'authentic.entities.Account'
-
     # The default password rules for the application
     PASSWORD_RULES = {
       "min_length": 5,

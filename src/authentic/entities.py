@@ -21,7 +21,7 @@ class Account(Entity):
     is_active = field.Boolean(default=True)
     is_verified = field.Boolean(default=False)
     login_attempts = field.Integer(default=0)
-    password_history = field.List()
+    password_history = field.List(default=[])
     is_idp = field.Boolean(default=False)
     mfa_enabled = field.Boolean(default=False)
     mfa_key = field.String()
