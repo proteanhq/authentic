@@ -22,3 +22,6 @@ class AuthenticConfig:
 
     # Default list of roles allowed for the application
     ROLES = ('ADMIN',)
+
+    # Option to enable or disable account verifications
+    ENABLE_VERIFICATION = False
