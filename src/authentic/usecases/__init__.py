@@ -6,14 +6,14 @@ from .core import (CreateAccountRequestObject, CreateAccountUseCase,
                    ChangeAccountPasswordUseCase, ChangeAccountPasswordRequestObject,
                    SendResetPasswordEmailRequestObject, SendResetPasswordEmailUsecase,
                    ResetPasswordRequestObject, ResetPasswordUsecase,
-                   AuthenticateRequestObject, AuthenticateUseCase)
+                   LoginRequestObject, LoginUseCase)
 
 
 __all__ = ('CreateAccountRequestObject', 'CreateAccountUseCase', 'UpdateAccountUseCase',
            'UpdateAccountRequestObject', 'ChangeAccountPasswordUseCase',
            'ChangeAccountPasswordRequestObject', 'SendResetPasswordEmailRequestObject',
            'SendResetPasswordEmailUsecase', 'ResetPasswordRequestObject',
-           'ResetPasswordUsecase','AuthenticateRequestObject', 'AuthenticateUseCase',
+           'ResetPasswordUsecase','LoginRequestObject', 'LoginUseCase',
            'GenerateMfaUriForQrCodeRequestObject', 'GenerateMfaUriForQrCodeUseCase',
            'VerifyMfaOtpRequestObject', 'VerifyMfaOtpUseCase')
 

@@ -25,3 +25,6 @@ class AuthenticConfig:
 
     # Option to enable or disable account verifications
     ENABLE_VERIFICATION = False
+
+    # Set the default authentication backend to Basic
+    AUTHENTICATION_BACKEND = 'authentic.auth.basic'

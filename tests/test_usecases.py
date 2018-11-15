@@ -13,7 +13,7 @@ from authentic.usecases import (CreateAccountRequestObject, CreateAccountUseCase
                                 SendResetPasswordEmailRequestObject,
                                 SendResetPasswordEmailUsecase,
                                 ResetPasswordRequestObject, ResetPasswordUsecase,
-                                AuthenticateRequestObject, AuthenticateUseCase)
+                                LoginRequestObject, LoginUseCase)
 
 
 class AccountSchema(DictSchema):
@@ -188,8 +188,8 @@ class TestAuthenticUsecases:
             'password': 'dummy@789',
         }
         response = Tasklet.perform(
-            repo_factory, AccountSchema, AuthenticateUseCase,
-            AuthenticateRequestObject, payload.copy())
+            repo_factory, AccountSchema, LoginUseCase,
+            LoginRequestObject, payload.copy())
         assert response is not None
         assert response.success is False
         assert response.value == {
@@ -197,8 +197,8 @@ class TestAuthenticUsecases:
 
         payload['password'] = 'duMmy@789'
         response = Tasklet.perform(
-            repo_factory, AccountSchema, AuthenticateUseCase,
-            AuthenticateRequestObject, payload.copy())
+            repo_factory, AccountSchema, LoginUseCase,
+            LoginRequestObject, payload.copy())
         assert response is not None
         assert response.success is True
         assert response.value.id == 10
