@@ -5,6 +5,8 @@ import os
 import mock
 import pytest
 
+os.environ['PROTEAN_CONFIG'] = 'tests.support.sample_config'
+
 
 @pytest.fixture(scope='module', autouse=True)
 @mock.patch.dict(os.environ, {'PROTEAN_CONFIG': 'tests.support.sample_config'})

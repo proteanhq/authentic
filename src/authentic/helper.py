@@ -3,6 +3,9 @@
 import re
 from passlib.hash import pbkdf2_sha256
 
+from protean.conf import active_config
+
+
 REGEX_MAPPINGS = {
     "upper_case": '.*[A-Z].*',
     "lower_case": '.*[a-z].*',
@@ -19,8 +22,9 @@ class PasswordHandler:
     def is_valid(self, password, old_password_list):
         """This method validates password strength"""
         try:
-            if self.is_password_strong(password) and self.validate_if_blacklisted(password) \
-                    and self.check_password_history(password, old_password_list):
+            if self.is_password_strong(password) and \
+                    self.validate_if_blacklisted(password) and \
+                    self.check_password_history(password, old_password_list):
                 return {"message": "Valid password"}
         except Exception as error:
             return {"message": "Invalid password", "error": error.args[0]}
@@ -43,7 +47,8 @@ class PasswordHandler:
             format(self.config.get("min_length"),
                    self.config.get("max_length"))
 
-        if not self.config.get("min_length") <= len(password) <= self.config.get("max_length"):
+        if not (self.config.get("min_length") <= len(password) <=
+                self.config.get("max_length")):
             raise ValueError(generic_message)
         elif self.config.get("upper_case") and not \
                 bool(re.match(REGEX_MAPPINGS["upper_case"], password)):
@@ -61,6 +66,34 @@ class PasswordHandler:
         """Validation for the password history"""
         for old_pass in old_password_list:
             if pbkdf2_sha256.verify(password, old_pass):
-                raise ValueError("Password should not match previously used passwords")
+                raise ValueError(
+                    "Password should not match previously used passwords")
 
         return True
+
+
+def validate_new_password(new_password, old_password_list):
+    """Validate New Password"""
+
+    password_handler = PasswordHandler(active_config.PASSWORD_RULES)
+    response = password_handler.is_valid(new_password, old_password_list)
+    if response['message'] == 'Valid password':
+        response['is_valid'] = True
+    else:
+        response['is_valid'] = False
+
+    return response
+
+
+def modify_password_history(old_password, input_password_history):
+    """Tweak Password History"""
+
+    password_history = input_password_history[:]
+    password_config = active_config.PASSWORD_RULES
+    extra_count = len(password_history) - password_config['min_topology_changes']
+    if extra_count >= 0:
+        for _ in range(extra_count + 1):
+            password_history.pop(0)
+    password_history.append(old_password)
+
+    return password_history
