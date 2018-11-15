@@ -10,7 +10,8 @@ from protean.core.transport import ResponseSuccess, ResponseSuccessCreated,\
 from protean.core.usecase import (UseCase, UpdateRequestObject, UpdateUseCase)
 from protean.conf import active_config
 
-from authentic.helper import validate_new_password, modify_password_history
+from .. import auth_backend
+from ..helper import validate_new_password, modify_password_history
 from .helper import VerifyTokenRequestObject, VerifyTokenUseCase
 
 
@@ -326,7 +327,7 @@ class ResetPasswordUsecase(UseCase):
             return response_object
 
 
-class AuthenticateRequestObject(ValidRequestObject):
+class LoginRequestObject(ValidRequestObject):
     """
     This class encapsulates the Request Object for Authentication
     """
@@ -356,11 +357,11 @@ class AuthenticateRequestObject(ValidRequestObject):
         if invalid_req.has_errors:
             return invalid_req
 
-        return AuthenticateRequestObject(
+        return LoginRequestObject(
             entity_cls, username_or_email, password)
 
 
-class AuthenticateUseCase(UseCase):
+class LoginUseCase(UseCase):
     """This class implements the Authentication Usecase"""
 
     def process_request(self, request_object):
@@ -377,13 +378,18 @@ class AuthenticateUseCase(UseCase):
         if not account.is_locked:
             if pbkdf2_sha256.verify(request_object.password, account.password):
 
-                if account.is_verified:
-                    return ResponseSuccess(Status.SUCCESS, account)
-
-                elif active_config.ENABLE_VERIFICATION:
+                if active_config.ENABLE_VERIFICATION and \
+                        not account.is_verified:
                     # Todo: Handle sending account verification mail
                     return ResponseFailure.build_unprocessable_error(
                         {'username_or_email': 'Account is not verified'})
+                else:
+                    # Run the login callback usecase and return its response
+                    cb_usecase = auth_backend.LoginCallbackUseCase(
+                        self.repo, self.context)
+                    cb_request_obj = LoginCallbackRequestObject.from_dict(
+                        request_object.entity_cls, {'account': account})
+                    return cb_usecase.execute(cb_request_obj)
             else:
                 allowed_login_attempts = \
                     active_config.PASSWORD_RULES['max_invalid_attempts']
@@ -402,3 +408,27 @@ class AuthenticateUseCase(UseCase):
         else:
             return ResponseFailure.build_unprocessable_error(
                 {'username_or_email': 'Account has been locked.'})
+
+
+class LoginCallbackRequestObject(ValidRequestObject):
+    """
+    This class encapsulates the Request Object for Login Callback
+    """
+
+    def __init__(self, entity_cls, account):
+        """Initialize Request Object with the account object"""
+        self.entity_cls = entity_cls
+        self.account = account
+
+    @classmethod
+    def from_dict(cls, entity_cls, adict):
+        invalid_req = InvalidRequestObject()
+
+        if 'account' not in adict:
+            invalid_req.add_error('account',
+                                  'Account object is mandatory')
+
+        if invalid_req.has_errors:
+            return invalid_req
+
+        return LoginCallbackRequestObject(entity_cls, adict['account'])
