@@ -65,8 +65,8 @@ setup(
         'click==6.7',
         'passlib==1.7.1',
         'pyotp==2.2.6',
-        'protean==0.0.5'
-        # eg: 'aspectlib==1.1.1', 'six>=1.7',
+        'protean==0.0.5',
+        'pyjwt==1.6.4'
     ],
     extras_require={
         # eg:

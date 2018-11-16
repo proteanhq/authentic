@@ -34,9 +34,9 @@ class AuthenticationRequestObject(ValidRequestObject):
         if 'auth_scheme' not in adict:
             invalid_req.add_error('auth_scheme',
                                   'Authentication scheme is mandatory')
-        elif adict['auth_scheme'] != 'basic':
+        elif adict['auth_scheme'].lower() != 'basic':
             invalid_req.add_error('auth_scheme',
-                                  'Backend supports only Basic Scheme')
+                                  'Basic Backend supports only Basic Scheme')
 
         if 'credentials' not in adict:
             invalid_req.add_error('credentials', 'Credentials is mandatory')

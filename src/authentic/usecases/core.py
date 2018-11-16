@@ -14,8 +14,6 @@ from ..helper import validate_new_password, modify_password_history, \
     get_auth_backend
 from .helper import VerifyTokenRequestObject, VerifyTokenUseCase
 
-auth_backend = get_auth_backend()
-
 
 class CreateAccountRequestObject(ValidRequestObject):
     """
@@ -387,7 +385,7 @@ class LoginUseCase(UseCase):
                         {'username_or_email': 'Account is not verified'})
                 else:
                     # Run the login callback usecase and return its response
-                    cb_usecase = auth_backend.LoginCallbackUseCase(
+                    cb_usecase = get_auth_backend().LoginCallbackUseCase(
                         self.repo, self.context)
                     cb_request_obj = LoginCallbackRequestObject.from_dict(
                         request_object.entity_cls, {'account': account})
