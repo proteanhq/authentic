@@ -3,9 +3,7 @@ from passlib.hash import pbkdf2_sha256
 
 from protean.core.repository import repo_factory
 from protean.core.tasklet import Tasklet
-from protean.impl.repository.dict_repo import DictSchema
 
-from authentic.entities import Account
 from authentic.usecases import (CreateAccountRequestObject, CreateAccountUseCase,
                                 UpdateAccountUseCase, UpdateAccountRequestObject,
                                 ChangeAccountPasswordUseCase,
@@ -15,17 +13,7 @@ from authentic.usecases import (CreateAccountRequestObject, CreateAccountUseCase
                                 ResetPasswordRequestObject, ResetPasswordUsecase,
                                 LoginRequestObject, LoginUseCase)
 
-
-class AccountSchema(DictSchema):
-    """ Schema for the Dog Entity"""
-
-    class Meta:
-        """ Meta class for schema options"""
-        entity = Account
-        schema_name = 'accounts'
-
-
-repo_factory.register(AccountSchema)
+from .conftest import AccountSchema
 
 
 class TestAuthenticUsecases:
@@ -33,7 +21,7 @@ class TestAuthenticUsecases:
 
     @classmethod
     def setup_class(cls):
-        """ Setup instructions for this usecase """
+        """ Setup instructions for this test case set """
         cls.account = repo_factory.AccountSchema.create({
             'id': 10,
             'email': 'johndoe@domain.com',
@@ -43,6 +31,11 @@ class TestAuthenticUsecases:
             'phone': '90080000800',
             'roles': ['ADMIN']
         })
+
+    @classmethod
+    def teardown_class(cls):
+        """ Tear down instructions for this test case set"""
+        repo_factory.AccountSchema.delete(10)
 
     def test_create_account_usecase(self):
         """Test create account usecase of authentic"""
@@ -181,12 +174,14 @@ class TestAuthenticUsecases:
         account = repo_factory.AccountSchema.get(10)
         assert len(account.password_history) == 2
 
-    def test_authenticate_usecase(self):
-        """ Test authenticate usecase of authentic """
+    def test_login_usecase(self):
+        """ Test login usecase of authentic """
         payload = {
             'username_or_email': 'johndoe@domain.com',
             'password': 'dummy@789',
         }
+        account = repo_factory.AccountSchema.get(10)
+        print(account.is_locked, account.is_active)
         response = Tasklet.perform(
             repo_factory, AccountSchema, LoginUseCase,
             LoginRequestObject, payload.copy())

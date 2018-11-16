@@ -2,16 +2,23 @@
 
 import os
 
-import mock
-import pytest
-
 os.environ['PROTEAN_CONFIG'] = 'tests.support.sample_config'
 
+from protean.core.repository import repo_factory
+from protean.impl.repository.dict_repo import DictSchema
 
-@pytest.fixture(scope='module', autouse=True)
-@mock.patch.dict(os.environ, {'PROTEAN_CONFIG': 'tests.support.sample_config'})
-def config():
-    """Global Config fixture for all tests"""
+from authentic.entities import Account
 
-    from protean.conf import active_config
-    return active_config
+
+# Setup the schemas used by the test cases
+
+class AccountSchema(DictSchema):
+    """ Schema for the Dog Entity"""
+
+    class Meta:
+        """ Meta class for schema options"""
+        entity = Account
+        schema_name = 'accounts'
+
+
+repo_factory.register(AccountSchema)

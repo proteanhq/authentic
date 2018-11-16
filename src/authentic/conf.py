@@ -27,4 +27,4 @@ class AuthenticConfig:
     ENABLE_VERIFICATION = False
 
     # Set the default authentication backend to Basic
-    AUTHENTICATION_BACKEND = 'authentic.auth.basic'
+    AUTHENTICATION_BACKEND = 'authentic.backends.basic'

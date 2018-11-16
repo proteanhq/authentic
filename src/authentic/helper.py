@@ -1,6 +1,9 @@
 """Utility Methods for Authentication"""
 
 import re
+
+from importlib import import_module
+
 from passlib.hash import pbkdf2_sha256
 
 from protean.conf import active_config
@@ -97,3 +100,9 @@ def modify_password_history(old_password, input_password_history):
     password_history.append(old_password)
 
     return password_history
+
+
+def get_auth_backend():
+    """ Load the authentication backend """
+    auth_backend = import_module(active_config.AUTHENTICATION_BACKEND)
+    return auth_backend

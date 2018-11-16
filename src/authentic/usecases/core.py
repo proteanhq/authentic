@@ -10,9 +10,11 @@ from protean.core.transport import ResponseSuccess, ResponseSuccessCreated,\
 from protean.core.usecase import (UseCase, UpdateRequestObject, UpdateUseCase)
 from protean.conf import active_config
 
-from .. import auth_backend
-from ..helper import validate_new_password, modify_password_history
+from ..helper import validate_new_password, modify_password_history, \
+    get_auth_backend
 from .helper import VerifyTokenRequestObject, VerifyTokenUseCase
+
+auth_backend = get_auth_backend()
 
 
 class CreateAccountRequestObject(ValidRequestObject):
@@ -329,7 +331,7 @@ class ResetPasswordUsecase(UseCase):
 
 class LoginRequestObject(ValidRequestObject):
     """
-    This class encapsulates the Request Object for Authentication
+    This class encapsulates the Request Object for Login
     """
 
     def __init__(self, entity_cls, username_or_email, password):
@@ -375,7 +377,7 @@ class LoginUseCase(UseCase):
                 return ResponseFailure.build_unprocessable_error(
                     {'username_or_email': 'Account does not exist'})
 
-        if not account.is_locked:
+        if not account.is_locked and account.is_active:
             if pbkdf2_sha256.verify(request_object.password, account.password):
 
                 if active_config.ENABLE_VERIFICATION and \
@@ -407,7 +409,7 @@ class LoginUseCase(UseCase):
                         {'password': 'Password is not correct.'})
         else:
             return ResponseFailure.build_unprocessable_error(
-                {'username_or_email': 'Account has been locked.'})
+                {'username_or_email': 'Account has been locked/deactivated.'})
 
 
 class LoginCallbackRequestObject(ValidRequestObject):
