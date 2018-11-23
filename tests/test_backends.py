@@ -19,7 +19,6 @@ class TestAuthenticBackends:
     def setup_class(cls):
         """ Setup instructions for this test case set """
         cls.account = repo_factory.AccountSchema.create({
-            'id': 10,
             'email': 'johndoe@domain.com',
             'username': 'johndoe',
             'name': 'john doe',
@@ -32,7 +31,7 @@ class TestAuthenticBackends:
     @classmethod
     def teardown_class(cls):
         """ Tear down instructions for this test case set"""
-        repo_factory.AccountSchema.delete(10)
+        repo_factory.AccountSchema.delete(cls.account.id)
 
     def test_basic_backend(self):
         """ Test http basic authentication backend """
@@ -56,14 +55,14 @@ class TestAuthenticBackends:
             basic.AuthenticationRequestObject, payload.copy())
         assert response is not None
         assert response.success is True
-        assert response.value.id is 10
+        assert response.value.id is self.account.id
 
     def test_jwt_backend(self):
         """ Test jwt authentication backend """
 
         # Run the login callback usecase
         payload = {
-            'account': repo_factory.AccountSchema.get(10)
+            'account': repo_factory.AccountSchema.get(self.account.id)
         }
         response = Tasklet.perform(
             repo_factory, AccountSchema, jwt.LoginCallbackUseCase,
@@ -108,7 +107,7 @@ class TestAuthenticBackends:
 
         # Run the login callback usecase
         payload = {
-            'account': repo_factory.AccountSchema.get(10)
+            'account': repo_factory.AccountSchema.get(self.account.id)
         }
         response = Tasklet.perform(
             repo_factory, AccountSchema, jwt.LoginCallbackUseCase,
