@@ -238,15 +238,15 @@ class SendResetPasswordEmailUsecase(UseCase):
                 account.id,
                 {
                     "verification_token": token,
-                    "token_timestamp": token_ts.strftime('%Y-%m-%dT%H:%M:%S.%f')
+                    "token_timestamp": token_ts
                 }
             )
 
             # Todo: Send the password reset request email
-            payload = {
-                "email": email,
-                "subject": "Reset Password Request",
-            }
+            # payload = {
+            #     "email": email,
+            #     "subject": "Reset Password Request",
+            # }
             return ResponseSuccess(Status.SUCCESS, {"message": "Success"})
         else:
             return ResponseFailure.build_unprocessable_error(

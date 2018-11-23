@@ -12,8 +12,8 @@ class Account(Entity):
     roles = field.List()
 
     # username, email and password for auth
-    username = field.String(required=True)
-    email = field.String(required=True)
+    username = field.String(required=True, unique=True)
+    email = field.String(required=True, unique=True)
     password = field.String(required=True)
 
     # personal information of the account
@@ -39,7 +39,7 @@ class Account(Entity):
     mfa_enabled = field.Boolean(default=False)
 
     verification_token = field.String()
-    token_timestamp = field.String()
+    token_timestamp = field.DateTime()
 
 
 class Token(Entity):

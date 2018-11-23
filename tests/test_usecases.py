@@ -23,7 +23,6 @@ class TestAuthenticUsecases:
     def setup_class(cls):
         """ Setup instructions for this test case set """
         cls.account = repo_factory.AccountSchema.create({
-            'id': 10,
             'email': 'johndoe@domain.com',
             'username': 'johndoe',
             'name': 'john doe',
@@ -35,12 +34,11 @@ class TestAuthenticUsecases:
     @classmethod
     def teardown_class(cls):
         """ Tear down instructions for this test case set"""
-        repo_factory.AccountSchema.delete(10)
+        repo_factory.AccountSchema.delete(cls.account.id)
 
     def test_create_account_usecase(self):
         """Test create account usecase of authentic"""
         payload = {
-            'id': 1,
             'email': 'dummy@domain.com',
             'username': 'dummy',
             'password': 'duMmy@123',
@@ -52,12 +50,10 @@ class TestAuthenticUsecases:
                                    CreateAccountRequestObject, payload.copy())
         assert response is not None
         assert response.success is True
-        assert response.value.id == 1
         assert response.value.username == 'dummy'
 
         # Check for validation errors - 1
         payload1 = {
-            'id': 2,
             'email': 'dummy2@domain.com',
             'username': 'dummy2',
             'password': 'duMmy@123',
@@ -86,14 +82,13 @@ class TestAuthenticUsecases:
         assert response.value == {
             'code': 422, 'message': {'email': 'Email already exists'}}
 
-        # Delete the account object
-        repo_factory.AccountSchema.delete(1)
-
     def test_update_account_usecase(self):
         """Test update account usecase of authentic"""
         payload = {
-            'identifier': 10,
-            'phone': '90070000700',
+            'identifier': self.account.id,
+            'data': {
+                'phone': '90070000700',
+            }
         }
         response = Tasklet.perform(
             repo_factory, AccountSchema, UpdateAccountUseCase,
@@ -101,13 +96,13 @@ class TestAuthenticUsecases:
 
         assert response is not None
         assert response.success is True
-        assert response.value.id == 10
+        assert response.value.id == self.account.id
         assert response.value.phone == '90070000700'
 
     def test_change_password_usecase(self):
         """Test change password usecase of authentic"""
         payload = {
-            'identifier': 10,
+            'identifier': self.account.id,
             'data': {
                 'current_password': 'duMmy@123',
                 'new_password': 'duMmy@456',
@@ -123,7 +118,7 @@ class TestAuthenticUsecases:
 
         # Try to update the password again
         payload = {
-            'identifier': 10,
+            'identifier': self.account.id,
             'data': {
                 'current_password': 'duMmy@456',
                 'new_password': 'duMmy@123',
@@ -153,7 +148,7 @@ class TestAuthenticUsecases:
         assert response.success is True
 
         # Make sure that the verification token is set
-        account = repo_factory.AccountSchema.get(10)
+        account = repo_factory.AccountSchema.get(self.account.id)
         assert account.verification_token is not None
 
         # Now reset the password with this token
@@ -171,7 +166,7 @@ class TestAuthenticUsecases:
         assert response.success is True
 
         # Make sure that the password has been updated
-        account = repo_factory.AccountSchema.get(10)
+        account = repo_factory.AccountSchema.get(self.account.id)
         assert len(account.password_history) == 2
 
     def test_login_usecase(self):
@@ -180,8 +175,6 @@ class TestAuthenticUsecases:
             'username_or_email': 'johndoe@domain.com',
             'password': 'dummy@789',
         }
-        account = repo_factory.AccountSchema.get(10)
-        print(account.is_locked, account.is_active)
         response = Tasklet.perform(
             repo_factory, AccountSchema, LoginUseCase,
             LoginRequestObject, payload.copy())
@@ -196,5 +189,5 @@ class TestAuthenticUsecases:
             LoginRequestObject, payload.copy())
         assert response is not None
         assert response.success is True
-        assert response.value.id == 10
+        assert response.value.id == self.account.id
         assert response.value.email == 'johndoe@domain.com'

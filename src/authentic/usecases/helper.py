@@ -40,9 +40,8 @@ class VerifyTokenUseCase(UseCase):
         account = self.repo.filter(verification_token=token).first
 
         if account:
-            token_time = datetime.datetime.strptime(
-                account.token_timestamp, "%Y-%m-%dT%H:%M:%S.%f")
-            if datetime.datetime.now() > token_time:
+            token_time = account.token_timestamp
+            if datetime.datetime.utcnow() > token_time:
                 return ResponseFailure.build_unprocessable_error(
                     "Token expired")
             else:
