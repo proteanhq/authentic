@@ -41,7 +41,7 @@ class VerifyTokenUseCase(UseCase):
 
         if account:
             token_time = account.token_timestamp
-            if datetime.datetime.now() > token_time:
+            if datetime.datetime.utcnow() > token_time:
                 return ResponseFailure.build_unprocessable_error(
                     "Token expired")
             else:
