@@ -62,10 +62,10 @@ setup(
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
     install_requires=[
-        'click==6.7',
+        'click==7.0',
         'passlib==1.7.1',
         'pyotp==2.2.6',
-        'protean==0.0.5',
+        'protean==0.0.6',
         'pyjwt==1.6.4'
     ],
     extras_require={

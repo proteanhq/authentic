@@ -8,5 +8,5 @@ def test_main():
     runner = CliRunner()
     result = runner.invoke(main, [])
 
-    assert result.output == '()\n'
+    assert 'Utility commands for the authentic package' in result.output
     assert result.exit_code == 0

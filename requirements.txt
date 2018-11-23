@@ -1,5 +1,5 @@
 passlib==1.7.1
 pyotp==2.2.6
-click==6.7
+click==7.0
 pyjwt==1.6.4
 -r requirements/dev.txt
