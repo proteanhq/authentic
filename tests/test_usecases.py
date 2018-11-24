@@ -1,7 +1,7 @@
 """ Test the usecases supplied by the authentic application """
 from passlib.hash import pbkdf2_sha256
 
-from protean.core.repository import repo_factory
+from protean.core.repository import repo
 from protean.core.tasklet import Tasklet
 
 from authentic.usecases import (CreateAccountRequestObject, CreateAccountUseCase,
@@ -22,7 +22,7 @@ class TestAuthenticUsecases:
     @classmethod
     def setup_class(cls):
         """ Setup instructions for this test case set """
-        cls.account = repo_factory.AccountSchema.create({
+        cls.account = repo.AccountSchema.create({
             'email': 'johndoe@domain.com',
             'username': 'johndoe',
             'name': 'john doe',
@@ -34,7 +34,7 @@ class TestAuthenticUsecases:
     @classmethod
     def teardown_class(cls):
         """ Tear down instructions for this test case set"""
-        repo_factory.AccountSchema.delete(cls.account.id)
+        repo.AccountSchema.delete(cls.account.id)
 
     def test_create_account_usecase(self):
         """Test create account usecase of authentic"""
@@ -46,7 +46,7 @@ class TestAuthenticUsecases:
             'phone': '90080000800',
             'roles': ['ADMIN']
         }
-        response = Tasklet.perform(repo_factory, AccountSchema, CreateAccountUseCase,
+        response = Tasklet.perform(repo, AccountSchema, CreateAccountUseCase,
                                    CreateAccountRequestObject, payload.copy())
         assert response is not None
         assert response.success is True
@@ -61,7 +61,7 @@ class TestAuthenticUsecases:
             'phone': '90080000800',
             'roles': ['ADMIN', 'Dummy']
         }
-        response = Tasklet.perform(repo_factory, AccountSchema, CreateAccountUseCase,
+        response = Tasklet.perform(repo, AccountSchema, CreateAccountUseCase,
                                    CreateAccountRequestObject, payload1)
         assert response is not None
         assert response.success is False
@@ -74,7 +74,7 @@ class TestAuthenticUsecases:
         }
 
         # Check for validation errors - 2
-        response = Tasklet.perform(repo_factory, AccountSchema,
+        response = Tasklet.perform(repo, AccountSchema,
                                    CreateAccountUseCase,
                                    CreateAccountRequestObject, payload)
         assert response is not None
@@ -91,7 +91,7 @@ class TestAuthenticUsecases:
             }
         }
         response = Tasklet.perform(
-            repo_factory, AccountSchema, UpdateAccountUseCase,
+            repo, AccountSchema, UpdateAccountUseCase,
             UpdateAccountRequestObject, payload.copy())
 
         assert response is not None
@@ -110,7 +110,7 @@ class TestAuthenticUsecases:
             }
         }
         response = Tasklet.perform(
-            repo_factory, AccountSchema, ChangeAccountPasswordUseCase,
+            repo, AccountSchema, ChangeAccountPasswordUseCase,
             ChangeAccountPasswordRequestObject, payload.copy())
 
         assert response is not None
@@ -126,7 +126,7 @@ class TestAuthenticUsecases:
             }
         }
         response = Tasklet.perform(
-            repo_factory, AccountSchema, ChangeAccountPasswordUseCase,
+            repo, AccountSchema, ChangeAccountPasswordUseCase,
             ChangeAccountPasswordRequestObject, payload.copy())
 
         assert response is not None
@@ -142,13 +142,13 @@ class TestAuthenticUsecases:
             'email': 'johndoe@domain.com',
         }
         response = Tasklet.perform(
-            repo_factory, AccountSchema, SendResetPasswordEmailUsecase,
+            repo, AccountSchema, SendResetPasswordEmailUsecase,
             SendResetPasswordEmailRequestObject, payload.copy())
         assert response is not None
         assert response.success is True
 
         # Make sure that the verification token is set
-        account = repo_factory.AccountSchema.get(self.account.id)
+        account = repo.AccountSchema.get(self.account.id)
         assert account.verification_token is not None
 
         # Now reset the password with this token
@@ -160,13 +160,13 @@ class TestAuthenticUsecases:
             }
         }
         response = Tasklet.perform(
-            repo_factory, AccountSchema, ResetPasswordUsecase,
+            repo, AccountSchema, ResetPasswordUsecase,
             ResetPasswordRequestObject, payload.copy())
         assert response is not None
         assert response.success is True
 
         # Make sure that the password has been updated
-        account = repo_factory.AccountSchema.get(self.account.id)
+        account = repo.AccountSchema.get(self.account.id)
         assert len(account.password_history) == 2
 
     def test_login_usecase(self):
@@ -176,7 +176,7 @@ class TestAuthenticUsecases:
             'password': 'dummy@789',
         }
         response = Tasklet.perform(
-            repo_factory, AccountSchema, LoginUseCase,
+            repo, AccountSchema, LoginUseCase,
             LoginRequestObject, payload.copy())
         assert response is not None
         assert response.success is False
@@ -185,7 +185,7 @@ class TestAuthenticUsecases:
 
         payload['password'] = 'duMmy@789'
         response = Tasklet.perform(
-            repo_factory, AccountSchema, LoginUseCase,
+            repo, AccountSchema, LoginUseCase,
             LoginRequestObject, payload.copy())
         assert response is not None
         assert response.success is True

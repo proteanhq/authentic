@@ -4,7 +4,7 @@ import os
 
 os.environ['PROTEAN_CONFIG'] = 'tests.support.sample_config'
 
-from protean.core.repository import repo_factory
+from protean.core.repository import repo
 from protean.impl.repository.dict_repo import DictSchema
 
 from authentic.entities import Account
@@ -21,4 +21,4 @@ class AccountSchema(DictSchema):
         schema_name = 'accounts'
 
 
-repo_factory.register(AccountSchema)
+repo.register(AccountSchema)

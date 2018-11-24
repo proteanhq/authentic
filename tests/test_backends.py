@@ -4,7 +4,7 @@ import os
 from passlib.hash import pbkdf2_sha256
 
 from protean.core.tasklet import Tasklet
-from protean.core.repository import repo_factory
+from protean.core.repository import repo
 from protean.conf import active_config
 
 from authentic.backends import basic, jwt
@@ -18,7 +18,7 @@ class TestAuthenticBackends:
     @classmethod
     def setup_class(cls):
         """ Setup instructions for this test case set """
-        cls.account = repo_factory.AccountSchema.create({
+        cls.account = repo.AccountSchema.create({
             'email': 'johndoe@domain.com',
             'username': 'johndoe',
             'name': 'john doe',
@@ -31,7 +31,7 @@ class TestAuthenticBackends:
     @classmethod
     def teardown_class(cls):
         """ Tear down instructions for this test case set"""
-        repo_factory.AccountSchema.delete(cls.account.id)
+        repo.AccountSchema.delete(cls.account.id)
 
     def test_basic_backend(self):
         """ Test http basic authentication backend """
@@ -40,7 +40,7 @@ class TestAuthenticBackends:
             'credentials': base64.b64encode(b'johndoe@domain.com:dummy@789'),
         }
         response = Tasklet.perform(
-            repo_factory, AccountSchema, basic.AuthenticationUseCase,
+            repo, AccountSchema, basic.AuthenticationUseCase,
             basic.AuthenticationRequestObject, payload.copy())
         assert response is not None
         assert response.success is False
@@ -51,7 +51,7 @@ class TestAuthenticBackends:
         payload['credentials'] = base64.b64encode(
             b'johndoe@domain.com:duMmy@123')
         response = Tasklet.perform(
-            repo_factory, AccountSchema, basic.AuthenticationUseCase,
+            repo, AccountSchema, basic.AuthenticationUseCase,
             basic.AuthenticationRequestObject, payload.copy())
         assert response is not None
         assert response.success is True
@@ -62,10 +62,10 @@ class TestAuthenticBackends:
 
         # Run the login callback usecase
         payload = {
-            'account': repo_factory.AccountSchema.get(self.account.id)
+            'account': repo.AccountSchema.get(self.account.id)
         }
         response = Tasklet.perform(
-            repo_factory, AccountSchema, jwt.LoginCallbackUseCase,
+            repo, AccountSchema, jwt.LoginCallbackUseCase,
             LoginCallbackRequestObject, payload.copy())
 
         assert response is not None
@@ -79,7 +79,7 @@ class TestAuthenticBackends:
             'credentials': 'xxxxxxxxxxxxxxxxx',
         }
         response = Tasklet.perform(
-            repo_factory, AccountSchema, jwt.AuthenticationUseCase,
+            repo, AccountSchema, jwt.AuthenticationUseCase,
             jwt.AuthenticationRequestObject, payload.copy())
         assert response is not None
         assert response.success is False
@@ -91,7 +91,7 @@ class TestAuthenticBackends:
         # Try again with the correct token
         payload['credentials'] = access_token
         response = Tasklet.perform(
-            repo_factory, AccountSchema, jwt.AuthenticationUseCase,
+            repo, AccountSchema, jwt.AuthenticationUseCase,
             jwt.AuthenticationRequestObject, payload.copy())
         assert response is not None
         assert response.success is True
@@ -107,10 +107,10 @@ class TestAuthenticBackends:
 
         # Run the login callback usecase
         payload = {
-            'account': repo_factory.AccountSchema.get(self.account.id)
+            'account': repo.AccountSchema.get(self.account.id)
         }
         response = Tasklet.perform(
-            repo_factory, AccountSchema, jwt.LoginCallbackUseCase,
+            repo, AccountSchema, jwt.LoginCallbackUseCase,
             LoginCallbackRequestObject, payload.copy())
 
         assert response is not None
@@ -125,7 +125,7 @@ class TestAuthenticBackends:
             'credentials': access_token,
         }
         response = Tasklet.perform(
-            repo_factory, AccountSchema, jwt.AuthenticationUseCase,
+            repo, AccountSchema, jwt.AuthenticationUseCase,
             jwt.AuthenticationRequestObject, payload.copy())
         assert response is not None
         assert response.success is True
