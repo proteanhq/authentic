@@ -155,7 +155,12 @@ class ChangeAccountPasswordRequestObject(ValidRequestObject):
         new_password = data.get('new_password')
         if new_password is None:
             invalid_req.add_error('new_password', 'New password is mandatory')
+
         confirm_password = data.get('confirm_password')
+        if confirm_password is None:
+            invalid_req.add_error(
+                'confirm_password', 'Confirm password is mandatory')
+
         if new_password and confirm_password and \
                 new_password != confirm_password:
             invalid_req.add_error('confirm_password',
@@ -276,8 +281,9 @@ class ResetPasswordRequestObject(ValidRequestObject):
             invalid_req.add_error('new_password', 'New password is mandatory')
         confirm_password = data.get('confirm_password')
         if confirm_password is None:
-            invalid_req.add_error('confirm_password',
-                                  'Confirm password is mandatory')
+            invalid_req.add_error(
+                'confirm_password', 'Confirm password is mandatory')
+
         if new_password and confirm_password and \
                 new_password != confirm_password:
             invalid_req.add_error('new_password',
