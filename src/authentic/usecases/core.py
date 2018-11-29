@@ -10,7 +10,7 @@ from protean.core.transport import ResponseSuccess, ResponseSuccessCreated,\
 from protean.core.usecase import (UseCase, UpdateRequestObject, UpdateUseCase)
 from protean.conf import active_config
 
-from ..helper import validate_new_password, modify_password_history, \
+from ..utils import validate_new_password, modify_password_history, \
     get_auth_backend
 from .helper import VerifyTokenRequestObject, VerifyTokenUseCase
 
