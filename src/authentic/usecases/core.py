@@ -5,9 +5,10 @@ import uuid
 from passlib.hash import pbkdf2_sha256
 
 from protean.core.transport import (InvalidRequestObject, ValidRequestObject)
-from protean.core.transport import ResponseSuccess, ResponseSuccessCreated,\
-    ResponseFailure, Status
+from protean.core.transport import (ResponseSuccess, ResponseSuccessCreated,
+                                    ResponseFailure, Status)
 from protean.core.usecase import (UseCase, UpdateRequestObject, UpdateUseCase)
+from protean.core.exceptions import ConfigurationError
 from protean.conf import active_config
 
 from ..utils import validate_new_password, modify_password_history, \
@@ -247,11 +248,15 @@ class SendResetPasswordEmailUsecase(UseCase):
                 }
             )
 
-            # Todo: Send the password reset request email
-            # payload = {
-            #     "email": email,
-            #     "subject": "Reset Password Request",
-            # }
+            # Send the password request email
+            email_builder = active_config.RESET_EMAIL_CALLBACK
+            if not email_builder:
+                raise ConfigurationError(
+                    '`RESET_EMAIL_CALLBACK` config must be set to a '
+                    'valid function.')
+            email_msg = email_builder(account.email, token)
+            email_msg.send()
+
             return ResponseSuccess(Status.SUCCESS, {"message": "Success"})
         else:
             return ResponseFailure.build_unprocessable_error(

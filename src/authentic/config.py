@@ -24,6 +24,10 @@ ROLES = ('ADMIN',)
 # Option to enable or disable account verifications
 ENABLE_VERIFICATION = False
 
+# Email Builder Callbacks
+RESET_EMAIL_CALLBACK = None
+VERIFICATION_EMAIL_CALLBACK = None
+
 # Set the default authentication backend to Basic
 AUTHENTICATION_BACKEND = 'authentic.backends.basic'
 

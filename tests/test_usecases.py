@@ -3,6 +3,7 @@ from passlib.hash import pbkdf2_sha256
 
 from protean.core.repository import repo
 from protean.core.tasklet import Tasklet
+from protean.services import email
 
 from authentic.usecases import (CreateAccountRequestObject, CreateAccountUseCase,
                                 UpdateAccountUseCase, UpdateAccountRequestObject,
@@ -151,6 +152,13 @@ class TestAuthenticUsecases:
         # Make sure that the verification token is set
         account = repo.AccountSchema.get(self.account.id)
         assert account.verification_token is not None
+
+        # Make sure that the reset email was sent
+        assert email.outbox[-1].message() == (
+            "johndoe@domain.com\n"
+            "['johndoe@domain.com']\n"
+            "Password Reset Request\n"
+            f"Your reset secret token is {account.verification_token}")
 
         # Now reset the password with this token
         payload = {
