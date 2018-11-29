@@ -10,7 +10,7 @@ from authentic.usecases import LoginRequestObject, LoginUseCase
 
 
 class LoginCallbackUseCase(UseCase):
-    """ Default login callback that just returns the account """
+    """ Login callback that just returns the account """
 
     def process_request(self, request_object):
         """Process Login Callback Request"""
@@ -70,6 +70,13 @@ class AuthenticationUseCase(UseCase):
 
         request_object = LoginRequestObject.from_dict(
             request_object.entity_cls, payload)
-        use_case = LoginUseCase(self.repo, self.context)
+        use_case = LoginUseCase(self.repo)
         return use_case.execute(request_object)
 
+
+class LogoutCallbackUseCase(UseCase):
+    """ Logout callback that just returns success """
+
+    def process_request(self, request_object):
+        """ Process Logout Callback Request """
+        return ResponseSuccess(Status.SUCCESS, {'message': 'success'})

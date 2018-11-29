@@ -12,15 +12,15 @@ class Account(Entity):
     roles = field.List()
 
     # username, email and password for auth
-    username = field.String(required=True, unique=True)
-    email = field.String(required=True, unique=True)
-    password = field.String(required=True)
+    username = field.StringMedium(required=True, unique=True)
+    email = field.StringLong(required=True, unique=True)
+    password = field.StringLong(required=True)
 
     # personal information of the account
-    title = field.String()
-    name = field.String()
-    phone = field.String()
-    timezone = field.String()
+    title = field.StringMedium()
+    name = field.StringLong()
+    phone = field.StringMedium()
+    timezone = field.StringMedium()
 
     # Flag indicates if account has been locked
     is_locked = field.Boolean(default=False)
@@ -35,16 +35,20 @@ class Account(Entity):
     password_history = field.List(default=[])
 
     # Multi factor authentication settings
-    mfa_key = field.String()
+    mfa_key = field.StringLong()
     mfa_enabled = field.Boolean(default=False)
 
-    verification_token = field.String()
+    verification_token = field.StringLong()
     token_timestamp = field.DateTime()
 
 
-class Token(Entity):
-    """
-    This class initializes a Token entity for storing verification tokens.
-    """
-    token = field.String()
-    timestamp = field.String()
+class Session(Entity):
+    """ This class initializes a Session entity for storing session data. """
+    # The key of this session
+    session_key = field.StringLong(identifier=True)
+
+    # Optional data stored for this session
+    session_data = field.Dict()
+
+    # Expiry date for the session
+    expire_date = field.DateTime()

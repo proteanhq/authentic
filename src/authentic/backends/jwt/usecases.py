@@ -1,12 +1,17 @@
 """ Usecase for handling basic Authentication """
+from datetime import datetime
+
 from jwt.algorithms import requires_cryptography
 from jwt.exceptions import DecodeError
 
-from protean.core.transport import (InvalidRequestObject, ValidRequestObject)
+from protean.core.transport import (InvalidRequestObject, ValidRequestObject,
+                                    Status)
 from protean.core.transport import ResponseSuccess, ResponseFailure, Status
 from protean.core.usecase import UseCase
 from protean.core.exceptions import ObjectNotFoundError
+from protean.core.repository import repo
 from protean.conf import active_config
+from protean.context import context
 
 from .tokens import decode_jwt, encode_access_token
 from .exceptions import JWTDecodeError
@@ -32,7 +37,7 @@ class LoginCallbackUseCase(UseCase):
                 encode_key = fp.read()
 
         # Generate the jwt token and return in response
-        access_token = encode_access_token(
+        token_data, access_token = encode_access_token(
             identity=identity,
             secret=encode_key,
             algorithm=active_config.JWT_ALGORITHM,
@@ -43,6 +48,16 @@ class LoginCallbackUseCase(UseCase):
             user_claims=None,
             user_claims_key=None,
         )
+
+        # Save the session to enable logout
+        repo.SessionSchema.create(
+            session_key=f'token-{request_object.account.id}'
+                        f'-{token_data["jti"]}',
+            session_data={},
+            expire_date=datetime.utcnow() +
+                        active_config.JWT_ACCESS_TOKEN_EXPIRES
+        )
+        context.set_context({'jwt_data': token_data})
         return ResponseSuccess(Status.SUCCESS, {'access_token': access_token})
 
 
@@ -98,16 +113,36 @@ class AuthenticationUseCase(UseCase):
                 identity_claim_key=active_config.JWT_IDENTITY_CLAIM
             )
         except (JWTDecodeError, DecodeError) as e:
-            return ResponseFailure.build_unprocessable_error(
-                {'credentials': f'Invalid JWT Token. {e}'})
+            return ResponseFailure(
+                Status.UNAUTHORIZED, {'credentials': f'Invalid JWT Token. {e}'})
 
         # Find the identity in the decoded jwt
         identity = jwt_data.get(active_config.JWT_IDENTITY_CLAIM, None)
         try:
             account = self.repo.get(identity['account_id'])
         except ObjectNotFoundError:
-            return ResponseFailure.build_unprocessable_error(
+            return ResponseFailure(
+                Status.UNAUTHORIZED,
                 {'username_or_email': 'Account does not exist'})
 
+        # Make sure that the session exits
+        session = repo.SessionSchema.filter(
+            session_key=f'token-{account.id}-{jwt_data["jti"]}',
+        )
+        if not session or session.first.expire_date < datetime.utcnow():
+            return ResponseFailure(
+                Status.UNAUTHORIZED, {'token': 'Invalid Token'})
+
+        context.set_context({'jwt_data': jwt_data})
         return ResponseSuccess(Status.SUCCESS, account)
 
+
+class LogoutCallbackUseCase(UseCase):
+    """ Logout callback that just returns success """
+
+    def process_request(self, request_object):
+        """ Process Logout Callback Request """
+        # Remove the session
+        repo.SessionSchema.delete(
+            f'token-{request_object.account.id}-{context.jwt_data["jti"]}')
+        return ResponseSuccess(Status.SUCCESS, {'message': 'success'})

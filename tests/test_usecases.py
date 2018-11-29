@@ -11,7 +11,8 @@ from authentic.usecases import (CreateAccountRequestObject, CreateAccountUseCase
                                 SendResetPasswordEmailRequestObject,
                                 SendResetPasswordEmailUsecase,
                                 ResetPasswordRequestObject, ResetPasswordUsecase,
-                                LoginRequestObject, LoginUseCase)
+                                LoginRequestObject, LoginUseCase,
+                                LogoutRequestObject, LogoutUseCase)
 
 from .conftest import AccountSchema
 
@@ -185,9 +186,21 @@ class TestAuthenticUsecases:
 
         payload['password'] = 'duMmy@789'
         response = Tasklet.perform(
-            repo, AccountSchema, LoginUseCase,
-            LoginRequestObject, payload.copy())
+            repo, AccountSchema, LoginUseCase, LoginRequestObject,
+            payload.copy())
         assert response is not None
         assert response.success is True
         assert response.value.id == self.account.id
         assert response.value.email == 'johndoe@domain.com'
+
+    def test_logout_usecase(self):
+        """ Test logout usecase of authentic """
+        payload = {
+            'account': self.account
+        }
+        response = Tasklet.perform(
+            repo, AccountSchema, LogoutUseCase, LogoutRequestObject,
+            payload.copy())
+        assert response is not None
+        assert response.success is True
+        assert response.value == {'message': 'success'}

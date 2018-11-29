@@ -25,7 +25,7 @@ def _encode_jwt(additional_token_data, expires_delta, secret, algorithm,
     token_data.update(additional_token_data)
     encoded_token = jwt.encode(token_data, secret, algorithm,
                                json_encoder=json_encoder).decode('utf-8')
-    return encoded_token
+    return token_data, encoded_token
 
 
 def encode_access_token(identity, secret, algorithm, expires_delta, fresh,

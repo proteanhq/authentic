@@ -371,7 +371,7 @@ class LoginUseCase(UseCase):
     """This class implements the Authentication Usecase"""
 
     def process_request(self, request_object):
-        """Process Authentication Request"""
+        """Process Login Request"""
         account = self.repo.filter(
             username=request_object.username_or_email).first
         if not account:
@@ -391,8 +391,8 @@ class LoginUseCase(UseCase):
                         {'username_or_email': 'Account is not verified'})
                 else:
                     # Run the login callback usecase and return its response
-                    cb_usecase = get_auth_backend().LoginCallbackUseCase(
-                        self.repo, self.context)
+                    auth_backend = get_auth_backend()
+                    cb_usecase = auth_backend.LoginCallbackUseCase(self.repo)
                     cb_request_obj = LoginCallbackRequestObject.from_dict(
                         request_object.entity_cls, {'account': account})
                     return cb_usecase.execute(cb_request_obj)
@@ -438,3 +438,40 @@ class LoginCallbackRequestObject(ValidRequestObject):
             return invalid_req
 
         return LoginCallbackRequestObject(entity_cls, adict['account'])
+
+
+class LogoutRequestObject(ValidRequestObject):
+    """
+    This class encapsulates the Request Object for Logout
+    """
+
+    def __init__(self, entity_cls, account):
+        """Initialize Request Object with the account object"""
+        self.entity_cls = entity_cls
+        self.account = account
+
+    @classmethod
+    def from_dict(cls, entity_cls, adict):
+        invalid_req = InvalidRequestObject()
+
+        if 'account' not in adict:
+            invalid_req.add_error('account',
+                                  'Account object is mandatory')
+
+        if invalid_req.has_errors:
+            return invalid_req
+
+        return LogoutRequestObject(entity_cls, adict['account'])
+
+
+class LogoutUseCase(UseCase):
+    """This class implements the Authentication Usecase"""
+
+    def process_request(self, request_object):
+        """ Process Logout Request """
+
+        # Run the logout callback usecase of the backend and
+        # return its response
+        auth_backend = get_auth_backend()
+        cb_usecase = auth_backend.LogoutCallbackUseCase(self.repo)
+        return cb_usecase.execute(request_object)
