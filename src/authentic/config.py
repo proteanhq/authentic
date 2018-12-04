@@ -19,7 +19,7 @@ PASSWORD_RULES = {
 }
 
 # Default list of roles allowed for the application
-ACCOUNT_ROLES = None
+ACCOUNT_ROLES = 'authentic.entities.DefaultRolesEnum'
 
 # Option to enable or disable account verifications
 ENABLE_ACCOUNT_VERIFICATION = False

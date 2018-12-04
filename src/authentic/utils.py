@@ -7,6 +7,7 @@ from importlib import import_module
 from passlib.hash import pbkdf2_sha256
 
 from protean.conf import active_config
+from protean.utils.importlib import perform_import
 
 
 REGEX_MAPPINGS = {
@@ -106,3 +107,9 @@ def get_auth_backend():
     """ Load the authentication backend """
     auth_backend = import_module(active_config.AUTHENTICATION_BACKEND)
     return auth_backend
+
+
+def get_account_roles():
+    """ Get the roles for the account from the settings"""
+    account_roles = perform_import(active_config.ACCOUNT_ROLES)
+    return account_roles

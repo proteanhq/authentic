@@ -4,6 +4,8 @@ from protean.core.entity import Entity
 from protean.core import field
 from protean.conf import active_config
 
+from .utils import get_account_roles
+
 
 class DefaultRolesEnum(Enum):
     """ Enumerator of roles for an account """
@@ -20,8 +22,7 @@ class Account(Entity):
     password = field.StringLong(required=True)
 
     # List of roles for the Account
-    roles = field.List(
-        choices=active_config.ACCOUNT_ROLES or DefaultRolesEnum)
+    roles = field.List(choices=get_account_roles())
 
     # personal information of the account
     title = field.StringMedium()
