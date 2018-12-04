@@ -19,10 +19,10 @@ PASSWORD_RULES = {
 }
 
 # Default list of roles allowed for the application
-ROLES = ('ADMIN',)
+ACCOUNT_ROLES = None
 
 # Option to enable or disable account verifications
-ENABLE_VERIFICATION = False
+ENABLE_ACCOUNT_VERIFICATION = False
 
 # Email Builder Callbacks
 RESET_EMAIL_CALLBACK = None

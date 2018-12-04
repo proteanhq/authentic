@@ -1,20 +1,27 @@
 """Account and Authentication Entities"""
-
+from enum import Enum
 from protean.core.entity import Entity
 from protean.core import field
+from protean.conf import active_config
+
+
+class DefaultRolesEnum(Enum):
+    """ Enumerator of roles for an account """
+    ADMIN = 'ADMIN'
 
 
 class Account(Entity):
     """
     This class initializes an Account Entity.
     """
-    # List of roles for the Account
-    roles = field.List()
-
     # username, email and password for auth
     username = field.StringMedium(required=True, unique=True)
     email = field.StringLong(required=True, unique=True)
     password = field.StringLong(required=True)
+
+    # List of roles for the Account
+    roles = field.List(
+        choices=active_config.ACCOUNT_ROLES or DefaultRolesEnum)
 
     # personal information of the account
     title = field.StringMedium()

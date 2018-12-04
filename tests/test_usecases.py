@@ -61,7 +61,6 @@ class TestAuthenticUsecases:
             'password': 'duMmy@123',
             'confirm_password': 'dummy@123',
             'phone': '90080000800',
-            'roles': ['ADMIN', 'Dummy']
         }
         response = Tasklet.perform(repo, AccountSchema, CreateAccountUseCase,
                                    CreateAccountRequestObject, payload1)
@@ -69,7 +68,6 @@ class TestAuthenticUsecases:
         assert response.success is False
         assert response.value == {
             'code': 422, 'message': {
-                'roles': 'Invalid role(s)',
                 'confirm_password': 'Password and Confirm password must be same'
             },
 

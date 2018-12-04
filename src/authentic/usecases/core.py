@@ -53,10 +53,6 @@ class CreateAccountRequestObject(ValidRequestObject):
                 else:
                     del adict['confirm_password']
 
-        if 'roles' in adict:
-            if not set(adict['roles']).issubset(active_config.ROLES):
-                invalid_req.add_error('roles', 'Invalid role(s)')
-
         if invalid_req.has_errors:
             return invalid_req
 
@@ -101,9 +97,6 @@ class UpdateAccountRequestObject(UpdateRequestObject):
     @classmethod
     def from_dict(cls, entity_cls, adict):
         invalid_req = InvalidRequestObject()
-        if 'roles' in adict:
-            if not set(adict['roles']).issubset(active_config.ROLES):
-                invalid_req.add_error('roles', 'Invalid role(s)')
 
         if invalid_req.has_errors:
             return invalid_req
@@ -389,7 +382,7 @@ class LoginUseCase(UseCase):
         if not account.is_locked and account.is_active:
             if pbkdf2_sha256.verify(request_object.password, account.password):
 
-                if active_config.ENABLE_VERIFICATION and \
+                if active_config.ENABLE_ACCOUNT_VERIFICATION and \
                         not account.is_verified:
                     # Todo: Handle sending account verification mail
                     return ResponseFailure.build_unprocessable_error(
