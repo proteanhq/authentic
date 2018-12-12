@@ -10,6 +10,7 @@ from protean.core.transport import (ResponseSuccess, ResponseSuccessCreated,
 from protean.core.usecase import (UseCase, UpdateRequestObject, UpdateUseCase)
 from protean.core.exceptions import ConfigurationError
 from protean.conf import active_config
+from protean.utils.importlib import perform_import
 
 from ..utils import validate_new_password, modify_password_history, \
     get_auth_backend
@@ -242,7 +243,7 @@ class SendResetPasswordEmailUsecase(UseCase):
             )
 
             # Send the password request email
-            email_builder = active_config.RESET_EMAIL_CALLBACK
+            email_builder = perform_import(active_config.RESET_EMAIL_CALLBACK)
             if not email_builder:
                 raise ConfigurationError(
                     '`RESET_EMAIL_CALLBACK` config must be set to a '

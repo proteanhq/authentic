@@ -2,7 +2,6 @@
 from enum import Enum
 from protean.core.entity import Entity
 from protean.core import field
-from protean.conf import active_config
 
 from .utils import get_account_roles
 
