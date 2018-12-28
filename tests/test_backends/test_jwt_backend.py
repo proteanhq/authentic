@@ -1,16 +1,17 @@
 """ Test the usecases supplied by the JWT Backend """
 import os
-from passlib.hash import pbkdf2_sha256
 
-from protean.core.tasklet import Tasklet
-from protean.core.repository import repo
+from passlib.hash import pbkdf2_sha256
 from protean.conf import active_config
+from protean.core.repository import repo
+from protean.core.tasklet import Tasklet
 
 from authentic.backends import jwt
-from authentic.usecases import LoginCallbackRequestObject, LogoutUseCase, \
-    LogoutRequestObject
+from authentic.usecases import LoginCallbackRequestObject
+from authentic.usecases import LogoutRequestObject
 
-from ..conftest import AccountSchema, base_dir
+from ..conftest import AccountSchema
+from ..conftest import base_dir
 
 
 class TestAuthenticBackends:

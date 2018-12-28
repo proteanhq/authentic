@@ -1,7 +1,6 @@
 """ Configuration variables used by Authentic """
 import datetime
 
-
 # The default password rules for the application
 PASSWORD_RULES = {
     "min_length": 5,

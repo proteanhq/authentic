@@ -1,7 +1,8 @@
 """Account and Authentication Entities"""
 from enum import Enum
-from protean.core.entity import Entity
+
 from protean.core import field
+from protean.core.entity import Entity
 
 from .utils import get_account_roles
 

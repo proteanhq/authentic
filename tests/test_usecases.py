@@ -1,19 +1,23 @@
 """ Test the usecases supplied by the authentic application """
 from passlib.hash import pbkdf2_sha256
-
 from protean.core.repository import repo
 from protean.core.tasklet import Tasklet
 from protean.services import email
 
-from authentic.usecases import (CreateAccountRequestObject, CreateAccountUseCase,
-                                UpdateAccountUseCase, UpdateAccountRequestObject,
-                                ChangeAccountPasswordUseCase,
-                                ChangeAccountPasswordRequestObject,
-                                SendResetPasswordEmailRequestObject,
-                                SendResetPasswordEmailUsecase,
-                                ResetPasswordRequestObject, ResetPasswordUsecase,
-                                LoginRequestObject, LoginUseCase,
-                                LogoutRequestObject, LogoutUseCase)
+from authentic.usecases import ChangeAccountPasswordRequestObject
+from authentic.usecases import ChangeAccountPasswordUseCase
+from authentic.usecases import CreateAccountRequestObject
+from authentic.usecases import CreateAccountUseCase
+from authentic.usecases import LoginRequestObject
+from authentic.usecases import LoginUseCase
+from authentic.usecases import LogoutRequestObject
+from authentic.usecases import LogoutUseCase
+from authentic.usecases import ResetPasswordRequestObject
+from authentic.usecases import ResetPasswordUsecase
+from authentic.usecases import SendResetPasswordEmailRequestObject
+from authentic.usecases import SendResetPasswordEmailUsecase
+from authentic.usecases import UpdateAccountRequestObject
+from authentic.usecases import UpdateAccountUseCase
 
 from .conftest import AccountSchema
 

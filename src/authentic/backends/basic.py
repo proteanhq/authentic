@@ -2,11 +2,15 @@
 import base64
 import binascii
 
-from protean.core.transport import (InvalidRequestObject, ValidRequestObject)
-from protean.core.transport import ResponseSuccess, ResponseFailure, Status
+from protean.core.transport import InvalidRequestObject
+from protean.core.transport import ResponseFailure
+from protean.core.transport import ResponseSuccess
+from protean.core.transport import Status
+from protean.core.transport import ValidRequestObject
 from protean.core.usecase import UseCase
 
-from authentic.usecases import LoginRequestObject, LoginUseCase
+from authentic.usecases import LoginRequestObject
+from authentic.usecases import LoginUseCase
 
 
 class LoginCallbackUseCase(UseCase):

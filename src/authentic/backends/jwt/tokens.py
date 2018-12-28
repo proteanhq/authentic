@@ -1,12 +1,12 @@
 """ Utilities for encoding and decoding the json web tokens"""
 import datetime
 import uuid
-
 from calendar import timegm
 
 import jwt
 
-from .exceptions import JWTDecodeError, CSRFError
+from .exceptions import CSRFError
+from .exceptions import JWTDecodeError
 
 
 def _encode_jwt(additional_token_data, expires_delta, secret, algorithm,

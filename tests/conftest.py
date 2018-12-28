@@ -4,7 +4,8 @@ import os
 from protean.core.repository import repo
 from protean.impl.repository.dict_repo import DictSchema
 
-from authentic.entities import Account, Session
+from authentic.entities import Account
+from authentic.entities import Session
 
 base_dir = os.path.abspath(os.path.dirname(__file__))
 

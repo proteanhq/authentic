@@ -1,10 +1,12 @@
 """Usecases for supporting Multi Factor Authentication """
 import pyotp
-
-from protean.core.transport import (InvalidRequestObject, ValidRequestObject)
-from protean.core.transport import ResponseSuccess, ResponseFailure
-from protean.core.usecase import (UseCase, ShowRequestObject)
 from protean.conf import active_config
+from protean.core.transport import InvalidRequestObject
+from protean.core.transport import ResponseFailure
+from protean.core.transport import ResponseSuccess
+from protean.core.transport import ValidRequestObject
+from protean.core.usecase import ShowRequestObject
+from protean.core.usecase import UseCase
 
 
 class GenerateMfaUriForQrCodeRequestObject(ShowRequestObject):

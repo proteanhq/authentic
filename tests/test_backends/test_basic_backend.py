@@ -1,11 +1,12 @@
 """ Test the usecases supplied by the authentic application """
 import base64
-from passlib.hash import pbkdf2_sha256
 
-from protean.core.tasklet import Tasklet
+from passlib.hash import pbkdf2_sha256
 from protean.core.repository import repo
+from protean.core.tasklet import Tasklet
 
 from authentic.backends import basic
+
 from ..conftest import AccountSchema
 
 

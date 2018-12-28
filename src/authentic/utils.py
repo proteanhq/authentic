@@ -1,14 +1,11 @@
 """Utility Methods for Authentication"""
 
 import re
-
 from importlib import import_module
 
 from passlib.hash import pbkdf2_sha256
-
 from protean.conf import active_config
 from protean.utils.importlib import perform_import
-
 
 REGEX_MAPPINGS = {
     "upper_case": '.*[A-Z].*',

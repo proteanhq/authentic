@@ -2,19 +2,26 @@
 
 import datetime
 import uuid
-from passlib.hash import pbkdf2_sha256
 
-from protean.core.transport import (InvalidRequestObject, ValidRequestObject)
-from protean.core.transport import (ResponseSuccess, ResponseSuccessCreated,
-                                    ResponseFailure, Status)
-from protean.core.usecase import (UseCase, UpdateRequestObject, UpdateUseCase)
-from protean.core.exceptions import ConfigurationError
+from passlib.hash import pbkdf2_sha256
 from protean.conf import active_config
+from protean.core.exceptions import ConfigurationError
+from protean.core.transport import InvalidRequestObject
+from protean.core.transport import ResponseFailure
+from protean.core.transport import ResponseSuccess
+from protean.core.transport import ResponseSuccessCreated
+from protean.core.transport import Status
+from protean.core.transport import ValidRequestObject
+from protean.core.usecase import UpdateRequestObject
+from protean.core.usecase import UpdateUseCase
+from protean.core.usecase import UseCase
 from protean.utils.importlib import perform_import
 
-from ..utils import validate_new_password, modify_password_history, \
-    get_auth_backend
-from .helper import VerifyTokenRequestObject, VerifyTokenUseCase
+from ..utils import get_auth_backend
+from ..utils import modify_password_history
+from ..utils import validate_new_password
+from .helper import VerifyTokenRequestObject
+from .helper import VerifyTokenUseCase
 
 
 class CreateAccountRequestObject(ValidRequestObject):

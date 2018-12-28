@@ -3,18 +3,20 @@ from datetime import datetime
 
 from jwt.algorithms import requires_cryptography
 from jwt.exceptions import DecodeError
-
-from protean.core.transport import (InvalidRequestObject, ValidRequestObject,
-                                    Status)
-from protean.core.transport import ResponseSuccess, ResponseFailure, Status
-from protean.core.usecase import UseCase
-from protean.core.exceptions import ObjectNotFoundError
-from protean.core.repository import repo
 from protean.conf import active_config
 from protean.context import context
+from protean.core.exceptions import ObjectNotFoundError
+from protean.core.repository import repo
+from protean.core.transport import InvalidRequestObject
+from protean.core.transport import ResponseFailure
+from protean.core.transport import ResponseSuccess
+from protean.core.transport import Status
+from protean.core.transport import ValidRequestObject
+from protean.core.usecase import UseCase
 
-from .tokens import decode_jwt, encode_access_token
 from .exceptions import JWTDecodeError
+from .tokens import decode_jwt
+from .tokens import encode_access_token
 
 
 class LoginCallbackUseCase(UseCase):
