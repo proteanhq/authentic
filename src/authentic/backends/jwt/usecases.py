@@ -2,7 +2,7 @@
 from datetime import datetime
 
 from jwt.algorithms import requires_cryptography
-from jwt.exceptions import DecodeError
+from jwt.exceptions import DecodeError, ExpiredSignatureError
 from protean.conf import active_config
 from protean.context import context
 from protean.core.exceptions import ObjectNotFoundError
@@ -114,14 +114,14 @@ class AuthenticationUseCase(UseCase):
                 algorithm=active_config.JWT_ALGORITHM,
                 identity_claim_key=active_config.JWT_IDENTITY_CLAIM
             )
-        except (JWTDecodeError, DecodeError) as e:
+        except (JWTDecodeError, DecodeError, ExpiredSignatureError) as e:
             return ResponseFailure(
                 Status.UNAUTHORIZED, {'credentials': f'Invalid JWT Token. {e}'})
 
         # Find the identity in the decoded jwt
         identity = jwt_data.get(active_config.JWT_IDENTITY_CLAIM, None)
         try:
-            account = self.repo.get(identity['account_id'])
+            account = self.repo.get(identity.get('account_id'))
         except ObjectNotFoundError:
             return ResponseFailure(
                 Status.UNAUTHORIZED,
