@@ -7,7 +7,12 @@ Changelog
 
 * First release on PyPI.
 
-0.0.5 (2018-12-27)
+0.0.6 (2018-12-28)
 ------------------
 
 * Pre-Prod release on PyPI.
+
+0.0.6a (2019-01-31)
+------------------
+
+* Use correct keys for errors in password change usecases.

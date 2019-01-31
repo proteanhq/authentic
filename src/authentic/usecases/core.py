@@ -202,10 +202,10 @@ class ChangeAccountPasswordUseCase(UseCase):
                 return ResponseSuccess(Status.SUCCESS, {"message": "Success"})
             else:
                 return ResponseFailure.build_unprocessable_error(
-                    {'password': password_check['error']})
+                    {'new_password': password_check['error']})
         else:
             return ResponseFailure.build_unprocessable_error(
-                {'password': 'Invalid Password'})
+                {'current_password': 'Invalid Password'})
 
 
 class SendResetPasswordEmailRequestObject(ValidRequestObject):
@@ -334,7 +334,7 @@ class ResetPasswordUsecase(UseCase):
                 return ResponseSuccess(Status.SUCCESS, {"message": "Success"})
             else:
                 return ResponseFailure.build_unprocessable_error(
-                    {'password': password_check['error']})
+                    {'new_password': password_check['error']})
         else:
             return response_object
 
