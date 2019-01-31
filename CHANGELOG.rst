@@ -13,6 +13,6 @@ Changelog
 * Pre-Prod release on PyPI.
 
 0.0.6a (2019-01-31)
-------------------
+-------------------
 
 * Use correct keys for errors in password change usecases.

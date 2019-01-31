@@ -2,7 +2,8 @@
 from datetime import datetime
 
 from jwt.algorithms import requires_cryptography
-from jwt.exceptions import DecodeError, ExpiredSignatureError
+from jwt.exceptions import DecodeError
+from jwt.exceptions import ExpiredSignatureError
 from protean.conf import active_config
 from protean.context import context
 from protean.core.exceptions import ObjectNotFoundError
