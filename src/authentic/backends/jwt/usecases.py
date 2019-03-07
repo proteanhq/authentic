@@ -7,7 +7,7 @@ from jwt.exceptions import ExpiredSignatureError
 from protean.conf import active_config
 from protean.context import context
 from protean.core.exceptions import ObjectNotFoundError
-from protean.core.repository import repo
+
 from protean.core.transport import InvalidRequestObject
 from protean.core.transport import ResponseFailure
 from protean.core.transport import ResponseSuccess
@@ -16,6 +16,7 @@ from protean.core.transport import ValidRequestObject
 from protean.core.usecase import UseCase
 
 from .exceptions import JWTDecodeError
+from ...entities import Session, Account
 from .tokens import decode_jwt
 from .tokens import encode_access_token
 
@@ -53,7 +54,7 @@ class LoginCallbackUseCase(UseCase):
         )
 
         # Save the session to enable logout
-        repo.SessionSchema.create(
+        Session.create(
             session_key=f'token-{request_object.account.id}'
                         f'-{token_data["jti"]}',
             session_data={},
@@ -122,14 +123,14 @@ class AuthenticationUseCase(UseCase):
         # Find the identity in the decoded jwt
         identity = jwt_data.get(active_config.JWT_IDENTITY_CLAIM, None)
         try:
-            account = self.repo.get(identity.get('account_id'))
+            account = Account.get(identity.get('account_id'))
         except ObjectNotFoundError:
             return ResponseFailure(
                 Status.UNAUTHORIZED,
                 {'username_or_email': 'Account does not exist'})
 
         # Make sure that the session exits
-        session = repo.SessionSchema.filter(
+        session = Session.query.filter(
             session_key=f'token-{account.id}-{jwt_data["jti"]}',
         )
         if not session or session.first.expire_date < datetime.utcnow():
@@ -146,6 +147,7 @@ class LogoutCallbackUseCase(UseCase):
     def process_request(self, request_object):
         """ Process Logout Callback Request """
         # Remove the session
-        repo.SessionSchema.delete(
-            f'token-{request_object.account.id}-{context.jwt_data["jti"]}')
+        session = Session.get(f'token-{request_object.account.id}-'
+                              f'{context.jwt_data["jti"]}')
+        session.delete()
         return ResponseSuccess(Status.SUCCESS, {'message': 'success'})

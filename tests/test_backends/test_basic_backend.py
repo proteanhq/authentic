@@ -2,12 +2,11 @@
 import base64
 
 from passlib.hash import pbkdf2_sha256
-from protean.core.repository import repo
 from protean.core.tasklet import Tasklet
 
 from authentic.backends import basic
 
-from ..conftest import AccountSchema
+from ..conftest import Account
 
 
 class TestAuthenticBackends:
@@ -16,7 +15,7 @@ class TestAuthenticBackends:
     @classmethod
     def setup_class(cls):
         """ Setup instructions for this test case set """
-        cls.account = repo.AccountSchema.create({
+        cls.account = Account.create({
             'email': 'johndoe@domain.com',
             'username': 'johndoe',
             'name': 'john doe',
@@ -28,7 +27,7 @@ class TestAuthenticBackends:
     @classmethod
     def teardown_class(cls):
         """ Tear down instructions for this test case set"""
-        repo.AccountSchema.delete(cls.account.id)
+        cls.account.delete()
 
     def test_backend(self):
         """ Test http basic authentication backend """
@@ -37,7 +36,7 @@ class TestAuthenticBackends:
             'credentials': base64.b64encode(b'johndoe@domain.com:dummy@789'),
         }
         response = Tasklet.perform(
-            repo, AccountSchema, basic.AuthenticationUseCase,
+            Account, basic.AuthenticationUseCase,
             basic.AuthenticationRequestObject, payload.copy())
         assert response is not None
         assert response.success is False
@@ -48,7 +47,7 @@ class TestAuthenticBackends:
         payload['credentials'] = base64.b64encode(
             b'johndoe@domain.com:duMmy@123')
         response = Tasklet.perform(
-            repo, AccountSchema, basic.AuthenticationUseCase,
+            Account, basic.AuthenticationUseCase,
             basic.AuthenticationRequestObject, payload.copy())
         assert response is not None
         assert response.success is True
