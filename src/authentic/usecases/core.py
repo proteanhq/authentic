@@ -260,7 +260,7 @@ class SendResetPasswordEmailUsecase(UseCase):
             return ResponseSuccess(Status.SUCCESS, {"message": "Success"})
         else:
             return ResponseFailure.build_unprocessable_error(
-                {'identifier': 'Account does not exist.'})
+                {'email': 'Account does not exist.'})
 
 
 class ResetPasswordRequestObject(ValidRequestObject):
