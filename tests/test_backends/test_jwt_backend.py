@@ -3,14 +3,13 @@ import os
 
 from passlib.hash import pbkdf2_sha256
 from protean.conf import active_config
-from protean.core.repository import repo_factory
 from protean.core.tasklet import Tasklet
 
 from authentic.backends import jwt
 from authentic.usecases import LoginCallbackRequestObject
 from authentic.usecases import LogoutRequestObject
 
-from ..conftest import Account, AccountModel
+from ..conftest import Account
 from ..conftest import base_dir
 
 

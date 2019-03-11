@@ -7,7 +7,6 @@ from jwt.exceptions import ExpiredSignatureError
 from protean.conf import active_config
 from protean.context import context
 from protean.core.exceptions import ObjectNotFoundError
-
 from protean.core.transport import InvalidRequestObject
 from protean.core.transport import ResponseFailure
 from protean.core.transport import ResponseSuccess
@@ -15,9 +14,9 @@ from protean.core.transport import Status
 from protean.core.transport import ValidRequestObject
 from protean.core.usecase import UseCase
 
-from .exceptions import JWTDecodeError
 from ...entities import Session
 from ...utils import get_account_entity
+from .exceptions import JWTDecodeError
 from .tokens import decode_jwt
 from .tokens import encode_access_token
 

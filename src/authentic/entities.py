@@ -1,6 +1,7 @@
 """Account and Authentication Entities"""
 from datetime import datetime
 from enum import Enum
+
 from protean.core import field
 from protean.core.entity import Entity
 

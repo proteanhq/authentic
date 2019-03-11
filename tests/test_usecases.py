@@ -1,7 +1,6 @@
 """ Test the usecases supplied by the authentic application """
 from passlib.hash import pbkdf2_sha256
 from protean.core.tasklet import Tasklet
-from protean.core.repository import repo_factory
 from protean.services import email
 
 from authentic.usecases import ChangeAccountPasswordRequestObject
