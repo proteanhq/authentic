@@ -8,7 +8,7 @@ from protean.core.transport import Status
 from protean.core.transport import ValidRequestObject
 from protean.core.usecase import UseCase
 
-from ..entities import Account
+from ..utils import get_account_entity
 
 
 class VerifyTokenRequestObject(ValidRequestObject):
@@ -42,7 +42,8 @@ class VerifyTokenUseCase(UseCase):
 
     def process_request(self, request_object):
         token = request_object.token
-        account = Account.query.filter(verification_token=token).first
+        account = get_account_entity().query.filter(
+            verification_token=token).first
 
         if account:
             token_time = account.token_timestamp

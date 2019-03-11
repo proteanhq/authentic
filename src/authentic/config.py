@@ -17,6 +17,9 @@ PASSWORD_RULES = {
     ]
 }
 
+# Set the default account entity
+ACCOUNT_ENTITY = 'authentic.entities.Account'
+
 # Default list of roles allowed for the application
 ACCOUNT_ROLES = 'authentic.entities.DefaultRolesEnum'
 

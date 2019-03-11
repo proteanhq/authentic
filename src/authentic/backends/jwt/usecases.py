@@ -16,9 +16,12 @@ from protean.core.transport import ValidRequestObject
 from protean.core.usecase import UseCase
 
 from .exceptions import JWTDecodeError
-from ...entities import Session, Account
+from ...entities import Session
+from ...utils import get_account_entity
 from .tokens import decode_jwt
 from .tokens import encode_access_token
+
+Account = get_account_entity()
 
 
 class LoginCallbackUseCase(UseCase):

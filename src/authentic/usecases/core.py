@@ -17,12 +17,14 @@ from protean.core.usecase import UpdateUseCase
 from protean.core.usecase import UseCase
 from protean.utils.importlib import perform_import
 
+from ..utils import get_account_entity
 from ..utils import get_auth_backend
 from ..utils import modify_password_history
 from ..utils import validate_new_password
-from ..entities import Account
 from .helper import VerifyTokenRequestObject
 from .helper import VerifyTokenUseCase
+
+Account = get_account_entity()
 
 
 class CreateAccountRequestObject(ValidRequestObject):
@@ -61,6 +63,9 @@ class CreateAccountRequestObject(ValidRequestObject):
                         'Password and Confirm password must be same')
                 else:
                     del adict['confirm_password']
+
+        # Set the update datetime
+        adict['updated_at'] = datetime.datetime.utcnow()
 
         if invalid_req.has_errors:
             return invalid_req
@@ -106,6 +111,9 @@ class UpdateAccountRequestObject(UpdateRequestObject):
     @classmethod
     def from_dict(cls, entity_cls, adict):
         invalid_req = InvalidRequestObject()
+
+        # Set the update datetime
+        adict['data']['updated_at'] = datetime.datetime.utcnow()
 
         if invalid_req.has_errors:
             return invalid_req

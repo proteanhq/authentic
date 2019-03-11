@@ -8,7 +8,9 @@ from protean.core.transport import ValidRequestObject
 from protean.core.usecase import ShowRequestObject
 from protean.core.usecase import UseCase
 
-from ..entities import Account
+from ..utils import get_account_entity
+
+Account = get_account_entity()
 
 
 class GenerateMfaUriForQrCodeRequestObject(ShowRequestObject):
