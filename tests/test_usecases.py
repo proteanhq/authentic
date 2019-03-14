@@ -1,6 +1,5 @@
 """ Test the usecases supplied by the authentic application """
 from passlib.hash import pbkdf2_sha256
-from protean.core.repository import repo
 from protean.core.tasklet import Tasklet
 from protean.services import email
 
@@ -19,7 +18,7 @@ from authentic.usecases import SendResetPasswordEmailUsecase
 from authentic.usecases import UpdateAccountRequestObject
 from authentic.usecases import UpdateAccountUseCase
 
-from .conftest import AccountSchema
+from .conftest import Account
 
 
 class TestAuthenticUsecases:
@@ -28,7 +27,7 @@ class TestAuthenticUsecases:
     @classmethod
     def setup_class(cls):
         """ Setup instructions for this test case set """
-        cls.account = repo.AccountSchema.create({
+        cls.account = Account.create({
             'email': 'johndoe@domain.com',
             'username': 'johndoe',
             'name': 'john doe',
@@ -40,7 +39,7 @@ class TestAuthenticUsecases:
     @classmethod
     def teardown_class(cls):
         """ Tear down instructions for this test case set"""
-        repo.AccountSchema.delete(cls.account.id)
+        cls.account.delete()
 
     def test_create_account_usecase(self):
         """Test create account usecase of authentic"""
@@ -52,7 +51,7 @@ class TestAuthenticUsecases:
             'phone': '90080000800',
             'roles': ['ADMIN']
         }
-        response = Tasklet.perform(repo, AccountSchema, CreateAccountUseCase,
+        response = Tasklet.perform(Account, CreateAccountUseCase,
                                    CreateAccountRequestObject, payload.copy())
         assert response is not None
         assert response.success is True
@@ -66,7 +65,7 @@ class TestAuthenticUsecases:
             'confirm_password': 'dummy@123',
             'phone': '90080000800',
         }
-        response = Tasklet.perform(repo, AccountSchema, CreateAccountUseCase,
+        response = Tasklet.perform(Account, CreateAccountUseCase,
                                    CreateAccountRequestObject, payload1)
         assert response is not None
         assert response.success is False
@@ -78,8 +77,7 @@ class TestAuthenticUsecases:
         }
 
         # Check for validation errors - 2
-        response = Tasklet.perform(repo, AccountSchema,
-                                   CreateAccountUseCase,
+        response = Tasklet.perform(Account, CreateAccountUseCase,
                                    CreateAccountRequestObject, payload)
         assert response is not None
         assert response.success is False
@@ -95,7 +93,7 @@ class TestAuthenticUsecases:
             }
         }
         response = Tasklet.perform(
-            repo, AccountSchema, UpdateAccountUseCase,
+            Account, UpdateAccountUseCase,
             UpdateAccountRequestObject, payload.copy())
 
         assert response is not None
@@ -114,7 +112,7 @@ class TestAuthenticUsecases:
             }
         }
         response = Tasklet.perform(
-            repo, AccountSchema, ChangeAccountPasswordUseCase,
+            Account, ChangeAccountPasswordUseCase,
             ChangeAccountPasswordRequestObject, payload.copy())
 
         assert response is not None
@@ -130,15 +128,15 @@ class TestAuthenticUsecases:
             }
         }
         response = Tasklet.perform(
-            repo, AccountSchema, ChangeAccountPasswordUseCase,
+            Account, ChangeAccountPasswordUseCase,
             ChangeAccountPasswordRequestObject, payload.copy())
 
         assert response is not None
         assert response.success is False
         assert response.value == {
             'code': 422,
-            'message': {'password': 'Password should not match previously '
-                                    'used passwords'}}
+            'message': {'new_password': 'Password should not match previously '
+                                        'used passwords'}}
 
     def test_password_reset_usecase(self):
         """ Test resetting a password using an email link """
@@ -146,13 +144,13 @@ class TestAuthenticUsecases:
             'email': 'johndoe@domain.com',
         }
         response = Tasklet.perform(
-            repo, AccountSchema, SendResetPasswordEmailUsecase,
+            Account, SendResetPasswordEmailUsecase,
             SendResetPasswordEmailRequestObject, payload.copy())
         assert response is not None
         assert response.success is True
 
         # Make sure that the verification token is set
-        account = repo.AccountSchema.get(self.account.id)
+        account = Account.get(self.account.id)
         assert account.verification_token is not None
 
         # Make sure that the reset email was sent
@@ -171,13 +169,13 @@ class TestAuthenticUsecases:
             }
         }
         response = Tasklet.perform(
-            repo, AccountSchema, ResetPasswordUsecase,
+            Account, ResetPasswordUsecase,
             ResetPasswordRequestObject, payload.copy())
         assert response is not None
         assert response.success is True
 
         # Make sure that the password has been updated
-        account = repo.AccountSchema.get(self.account.id)
+        account = Account.get(self.account.id)
         assert len(account.password_history) == 2
 
     def test_login_usecase(self):
@@ -187,7 +185,7 @@ class TestAuthenticUsecases:
             'password': 'dummy@789',
         }
         response = Tasklet.perform(
-            repo, AccountSchema, LoginUseCase,
+            Account, LoginUseCase,
             LoginRequestObject, payload.copy())
         assert response is not None
         assert response.success is False
@@ -196,7 +194,7 @@ class TestAuthenticUsecases:
 
         payload['password'] = 'duMmy@789'
         response = Tasklet.perform(
-            repo, AccountSchema, LoginUseCase, LoginRequestObject,
+            Account, LoginUseCase, LoginRequestObject,
             payload.copy())
         assert response is not None
         assert response.success is True
@@ -209,8 +207,7 @@ class TestAuthenticUsecases:
             'account': self.account
         }
         response = Tasklet.perform(
-            repo, AccountSchema, LogoutUseCase, LogoutRequestObject,
-            payload.copy())
+            Account, LogoutUseCase, LogoutRequestObject, payload.copy())
         assert response is not None
         assert response.success is True
         assert response.value == {'message': 'success'}

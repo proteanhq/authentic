@@ -1,8 +1,8 @@
 """Module to setup Factories and other required artifacts for tests"""
 import os
 
-from protean.core.repository import repo
-from protean.impl.repository.dict_repo import DictSchema
+from protean.core.repository import repo_factory
+from protean.impl.repository.dict_repo import DictModel
 
 from authentic.entities import Account
 from authentic.entities import Session
@@ -11,7 +11,7 @@ base_dir = os.path.abspath(os.path.dirname(__file__))
 
 
 # Setup the schemas used by the test cases
-class AccountSchema(DictSchema):
+class AccountModel(DictModel):
     """ Schema for the Account Entity"""
 
     class Meta:
@@ -20,7 +20,7 @@ class AccountSchema(DictSchema):
         schema_name = 'accounts'
 
 
-class SessionSchema(DictSchema):
+class SessionModel(DictModel):
     """ Schema for the Session Entity"""
 
     class Meta:
@@ -29,5 +29,5 @@ class SessionSchema(DictSchema):
         schema_name = 'sessions'
 
 
-repo.register(AccountSchema)
-repo.register(SessionSchema)
+repo_factory.register(AccountModel)
+repo_factory.register(SessionModel)

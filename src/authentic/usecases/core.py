@@ -17,11 +17,14 @@ from protean.core.usecase import UpdateUseCase
 from protean.core.usecase import UseCase
 from protean.utils.importlib import perform_import
 
+from ..utils import get_account_entity
 from ..utils import get_auth_backend
 from ..utils import modify_password_history
 from ..utils import validate_new_password
 from .helper import VerifyTokenRequestObject
 from .helper import VerifyTokenUseCase
+
+Account = get_account_entity()
 
 
 class CreateAccountRequestObject(ValidRequestObject):
@@ -61,6 +64,9 @@ class CreateAccountRequestObject(ValidRequestObject):
                 else:
                     del adict['confirm_password']
 
+        # Set the update datetime
+        adict['updated_at'] = datetime.datetime.utcnow()
+
         if invalid_req.has_errors:
             return invalid_req
 
@@ -77,12 +83,12 @@ class CreateAccountUseCase(UseCase):
         data = request_object.data
         is_idp_login = request_object.data.get('is_idp', False)
 
-        if self.repo.filter(email=data['email']):
+        if Account.query.filter(email=data['email']):
             return ResponseFailure.build_unprocessable_error(
                 {'email': 'Email already exists'})
 
         if not is_idp_login:
-            if self.repo.filter(username=data['username']):
+            if Account.query.filter(username=data['username']):
                 return ResponseFailure.build_unprocessable_error(
                     {'username': 'Username already exists'})
 
@@ -92,7 +98,7 @@ class CreateAccountUseCase(UseCase):
                     {'password': password_check['error']})
 
         data['password'] = pbkdf2_sha256.hash(data['password'])
-        account = self.repo.create(data)
+        account = Account.create(data)
 
         return ResponseSuccessCreated(account)
 
@@ -105,6 +111,9 @@ class UpdateAccountRequestObject(UpdateRequestObject):
     @classmethod
     def from_dict(cls, entity_cls, adict):
         invalid_req = InvalidRequestObject()
+
+        # Set the update datetime
+        adict['data']['updated_at'] = datetime.datetime.utcnow()
 
         if invalid_req.has_errors:
             return invalid_req
@@ -119,10 +128,10 @@ class UpdateAccountUseCase(UpdateUseCase):
 
     def process_request(self, request_object):
         """Process update Account Request"""
-        account_obj = self.repo.get(request_object.identifier)
+        account_obj = Account.get(request_object.identifier)
         if request_object.data.get('email') and \
                 account_obj.email != request_object.data.get('email') and \
-                self.repo.filter(email=request_object.data['email']):
+                Account.query.filter(email=request_object.data['email']):
             return ResponseFailure.build_unprocessable_error(
                 {'email': 'Email already exists'})
 
@@ -185,7 +194,7 @@ class ChangeAccountPasswordUseCase(UseCase):
 
         identifier = request_object.identifier
         data = request_object.data
-        account = self.repo.get(identifier)
+        account = Account.get(identifier)
 
         if pbkdf2_sha256.verify(data['current_password'], account.password):
             password_check = validate_new_password(
@@ -195,8 +204,7 @@ class ChangeAccountPasswordUseCase(UseCase):
                 password_history = modify_password_history(
                     account.password,
                     account.password_history)
-                self.repo.update(
-                    request_object.identifier,
+                account.update(
                     {'password': password,
                      'password_history': password_history})
                 return ResponseSuccess(Status.SUCCESS, {"message": "Success"})
@@ -236,13 +244,12 @@ class SendResetPasswordEmailUsecase(UseCase):
 
     def process_request(self, request_object):
         email = request_object.email
-        account = self.repo.filter(email=email).first
+        account = Account.query.filter(email=email).first
 
         if account:
             token = str(uuid.uuid4())
             token_ts = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-            self.repo.update(
-                account.id,
+            account.update(
                 {
                     "verification_token": token,
                     "token_timestamp": token_ts
@@ -261,7 +268,7 @@ class SendResetPasswordEmailUsecase(UseCase):
             return ResponseSuccess(Status.SUCCESS, {"message": "Success"})
         else:
             return ResponseFailure.build_unprocessable_error(
-                {'identifier': 'Account does not exist.'})
+                {'email': 'Account does not exist.'})
 
 
 class ResetPasswordRequestObject(ValidRequestObject):
@@ -312,7 +319,7 @@ class ResetPasswordUsecase(UseCase):
         token = request_object.token
         data = request_object.data
 
-        verify_token_use_case = VerifyTokenUseCase(self.repo)
+        verify_token_use_case = VerifyTokenUseCase()
         verify_token_req_obj = VerifyTokenRequestObject.from_dict(
             request_object.entity_cls, {'token': token})
         response_object = verify_token_use_case.execute(verify_token_req_obj)
@@ -325,11 +332,11 @@ class ResetPasswordUsecase(UseCase):
                 password = pbkdf2_sha256.hash(data['new_password'])
                 password_history = modify_password_history(
                     account.password, account.password_history)
-                self.repo.update(
-                    account.id, {'password': password,
-                                 'is_locked': False,
-                                 'login_attempts': 0,
-                                 'password_history': password_history})
+                account.update(
+                    {'password': password,
+                     'is_locked': False,
+                     'login_attempts': 0,
+                     'password_history': password_history})
 
                 return ResponseSuccess(Status.SUCCESS, {"message": "Success"})
             else:
@@ -378,10 +385,10 @@ class LoginUseCase(UseCase):
 
     def process_request(self, request_object):
         """Process Login Request"""
-        account = self.repo.filter(
+        account = Account.query.filter(
             username=request_object.username_or_email).first
         if not account:
-            account = self.repo.filter(
+            account = Account.query.filter(
                 email=request_object.username_or_email).first
             if not account:
                 return ResponseFailure.build_unprocessable_error(
@@ -398,7 +405,7 @@ class LoginUseCase(UseCase):
                 else:
                     # Run the login callback usecase and return its response
                     auth_backend = get_auth_backend()
-                    cb_usecase = auth_backend.LoginCallbackUseCase(self.repo)
+                    cb_usecase = auth_backend.LoginCallbackUseCase()
                     cb_request_obj = LoginCallbackRequestObject.from_dict(
                         request_object.entity_cls, {'account': account})
                     return cb_usecase.execute(cb_request_obj)
@@ -407,14 +414,13 @@ class LoginUseCase(UseCase):
                     active_config.PASSWORD_RULES['max_invalid_attempts']
                 if account.login_attempts and \
                         account.login_attempts >= allowed_login_attempts:
-                    self.repo.update(account.id, {'is_locked': True})
+                    account.update(account.id, {'is_locked': True})
                     return ResponseFailure.build_unprocessable_error(
                         {'password': 'Exceeded maximum invalid attempts. '
                                      'Account has been locked.'})
                 else:
                     account.login_attempts += 1
-                    self.repo.update(account.id,
-                                     {'login_attempts': account.login_attempts})
+                    account.update({'login_attempts': account.login_attempts})
                     return ResponseFailure.build_unprocessable_error(
                         {'password': 'Password is not correct.'})
         else:
@@ -479,5 +485,5 @@ class LogoutUseCase(UseCase):
         # Run the logout callback usecase of the backend and
         # return its response
         auth_backend = get_auth_backend()
-        cb_usecase = auth_backend.LogoutCallbackUseCase(self.repo)
+        cb_usecase = auth_backend.LogoutCallbackUseCase()
         return cb_usecase.execute(request_object)

@@ -28,7 +28,7 @@ def read(*names, **kwargs):
 
 setup(
     name='authentic',
-    version='0.0.6a',
+    version='0.0.9',
     license='BSD 3-Clause License',
     description='Comprehensive Authentication Package',
     long_description='%s\n%s' % (
@@ -65,7 +65,7 @@ setup(
         'click==7.0',
         'passlib==1.7.1',
         'pyotp==2.2.6',
-        'protean==0.0.6',
+        'protean==0.0.9',
         'pyjwt==1.6.4'
     ],
     extras_require={

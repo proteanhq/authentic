@@ -8,6 +8,8 @@ from protean.core.transport import Status
 from protean.core.transport import ValidRequestObject
 from protean.core.usecase import UseCase
 
+from ..utils import get_account_entity
+
 
 class VerifyTokenRequestObject(ValidRequestObject):
     """
@@ -40,7 +42,8 @@ class VerifyTokenUseCase(UseCase):
 
     def process_request(self, request_object):
         token = request_object.token
-        account = self.repo.filter(verification_token=token).first
+        account = get_account_entity().query.filter(
+            verification_token=token).first
 
         if account:
             token_time = account.token_timestamp
@@ -48,7 +51,7 @@ class VerifyTokenUseCase(UseCase):
                 return ResponseFailure.build_unprocessable_error(
                     "Token expired")
             else:
-                self.repo.update(account.id, {"is_verified": True})
+                account.update({"is_verified": True})
                 return ResponseSuccess(Status.SUCCESS, account)
         else:
             return ResponseFailure.build_unprocessable_error("Invalid Token")

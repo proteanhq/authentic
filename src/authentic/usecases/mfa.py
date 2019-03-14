@@ -8,6 +8,10 @@ from protean.core.transport import ValidRequestObject
 from protean.core.usecase import ShowRequestObject
 from protean.core.usecase import UseCase
 
+from ..utils import get_account_entity
+
+Account = get_account_entity()
+
 
 class GenerateMfaUriForQrCodeRequestObject(ShowRequestObject):
     """
@@ -20,11 +24,11 @@ class GenerateMfaUriForQrCodeUseCase(UseCase):
 
     def process_request(self, request_object):
         identifier = request_object.identifier
-        account = self.repo.get(identifier, True)
+        account = Account.get(identifier, True)
 
         # Generate and store MFA key for the account
         mfa_key = pyotp.random_base32()
-        self.repo.update(identifier, {"mfa_key": mfa_key})
+        account.update({"mfa_key": mfa_key})
 
         # Base64 encode using account key and common key
         # Restrict to 16 characters - MFA supports keys with 16 length only
@@ -72,7 +76,7 @@ class VerifyMfaOtpUseCase(UseCase):
     def process_request(self, request_object):
         identifier = request_object.identifier
         mfa_otp = request_object.mfa_otp
-        account = self.repo.get(identifier)
+        account = Account.get(identifier)
         # FIXME MFA throws invalid key with the following approach
         # secret = base64.b64encode(bytes(account.mfa_key + CONFIG.MFA_SECRET_KEY,
         #                                 encoding='utf-8')).decode('utf-8')[:16]
@@ -81,8 +85,6 @@ class VerifyMfaOtpUseCase(UseCase):
             return ResponseFailure.build_unprocessable_error(
                 "Invalid OTP")
         if not account.mfa_enabled:
-            self.repo.update(identifier, {
-                "mfa_enabled": True
-            })
+            account.update({"mfa_enabled": True})
 
         return ResponseSuccess({"message": "Valid OTP"})

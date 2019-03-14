@@ -1,4 +1,5 @@
 """Account and Authentication Entities"""
+from datetime import datetime
 from enum import Enum
 
 from protean.core import field
@@ -12,9 +13,10 @@ class DefaultRolesEnum(Enum):
     ADMIN = 'ADMIN'
 
 
-class Account(Entity):
-    """
-    This class initializes an Account Entity.
+class AbstractAccount(Entity):
+    """ Base abstract class for account with only the required features.
+    Users wanting to extend Account should extend from this and set the
+    ACCOUNT_ENTITY config property
     """
     # username, email and password for auth
     username = field.StringMedium(required=True, unique=True)
@@ -24,30 +26,46 @@ class Account(Entity):
     # List of roles for the Account
     roles = field.List(choices=get_account_roles())
 
-    # personal information of the account
-    title = field.StringMedium()
+    # Name of the user
     name = field.StringLong()
-    phone = field.StringMedium()
-    timezone = field.StringMedium()
 
     # Flag indicates if account has been locked
     is_locked = field.Boolean(default=False)
     is_active = field.Boolean(default=True)
 
-    # Flag indicates if the email has been verified
-    is_verified = field.Boolean(default=False)
-    is_idp = field.Boolean(default=False)
-
     # Counter to save failed login attempts
     login_attempts = field.Integer(default=0)
     password_history = field.List(default=[])
+
+
+class Account(AbstractAccount):
+    """
+    This class initializes an Account Entity.
+    """
+
+    # personal information of the account
+    title = field.StringMedium()
+
+    phone = field.StringMedium()
+    timezone = field.StringMedium()
+
+    # Flag indicates if the email has been verified
+    is_verified = field.Boolean(default=False)
+    is_idp = field.Boolean(default=False)
 
     # Multi factor authentication settings
     mfa_key = field.StringLong()
     mfa_enabled = field.Boolean(default=False)
 
+    # Store the verification tokens here
     verification_token = field.StringLong()
     token_timestamp = field.DateTime()
+
+    # Datetime and other audit fields
+    created_at = field.DateTime(default=datetime.utcnow)
+    updated_at = field.DateTime()
+    created_by = field.Reference('Account')
+    updated_by = field.Reference('Account')
 
 
 class Session(Entity):

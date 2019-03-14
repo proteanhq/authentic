@@ -74,7 +74,7 @@ class AuthenticationUseCase(UseCase):
 
         request_object = LoginRequestObject.from_dict(
             request_object.entity_cls, payload)
-        use_case = LoginUseCase(self.repo)
+        use_case = LoginUseCase()
         return use_case.execute(request_object)
 
 

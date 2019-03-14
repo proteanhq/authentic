@@ -110,3 +110,9 @@ def get_account_roles():
     """ Get the roles for the account from the settings"""
     account_roles = perform_import(active_config.ACCOUNT_ROLES)
     return account_roles
+
+
+def get_account_entity():
+    """ Get the account entity for this app """
+    auth_backend = perform_import(active_config.ACCOUNT_ENTITY)
+    return auth_backend
