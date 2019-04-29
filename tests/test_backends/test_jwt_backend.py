@@ -1,25 +1,26 @@
 """ Test the usecases supplied by the JWT Backend """
 import os
+import pytest
 
 from passlib.hash import pbkdf2_sha256
 from protean.conf import active_config
 from protean.core.tasklet import Tasklet
 
 from authentic.backends import jwt
+from authentic.entities import Account
 from authentic.usecases import LoginCallbackRequestObject
 from authentic.usecases import LogoutRequestObject
 
-from ..conftest import Account
 from ..conftest import base_dir
 
 
 class TestAuthenticBackends:
     """ Test the usecases of Authentic"""
 
-    @classmethod
-    def setup_class(cls):
-        """ Setup instructions for this test case set """
-        cls.account = Account.create({
+    @pytest.fixture(scope="function")
+    def account(self):
+        """Setup account to use in test cases"""
+        account = Account.create({
             'email': 'johndoe@domain.com',
             'username': 'johndoe',
             'name': 'john doe',
@@ -27,18 +28,14 @@ class TestAuthenticBackends:
             'phone': '90080000800',
             'roles': ['ADMIN']
         })
+        yield account
 
-    @classmethod
-    def teardown_class(cls):
-        """ Tear down instructions for this test case set"""
-        cls.account.delete()
-
-    def test_backend(self):
+    def test_backend(self, account):
         """ Test jwt authentication backend """
 
         # Run the login callback usecase
         payload = {
-            'account': Account.get(self.account.id)
+            'account': Account.get(account.id)
         }
         response = Tasklet.perform(
             Account, jwt.LoginCallbackUseCase, LoginCallbackRequestObject,
@@ -72,7 +69,7 @@ class TestAuthenticBackends:
         assert response is not None
         assert response.success is True
 
-    def test_asymmetric_backend(self):
+    def test_asymmetric_backend(self, account):
         """ Test jwt authentication backend with asymmetric alg"""
         # Update the config settings
         active_config.JWT_ALGORITHM = 'RS256'
@@ -83,7 +80,7 @@ class TestAuthenticBackends:
 
         # Run the login callback usecase
         payload = {
-            'account': Account.get(self.account.id)
+            'account': Account.get(account.id)
         }
         response = Tasklet.perform(
             Account, jwt.LoginCallbackUseCase,
@@ -106,11 +103,11 @@ class TestAuthenticBackends:
         assert response is not None
         assert response.success is True
 
-    def test_logout_callback(self):
+    def test_logout_callback(self, account):
         """ Test logout mechanism for the JWT Backend """
         # Run the login callback usecase
         payload = {
-            'account': Account.get(self.account.id)
+            'account': Account.get(account.id)
         }
         response = Tasklet.perform(
             Account, jwt.LoginCallbackUseCase,

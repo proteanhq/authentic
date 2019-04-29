@@ -1,33 +1,53 @@
 """Module to setup Factories and other required artifacts for tests"""
 import os
 
-from protean.core.repository import repo_factory
-from protean.impl.repository.dict_repo import DictModel
+import pytest
 
-from authentic.entities import Account
-from authentic.entities import Session
 
 base_dir = os.path.abspath(os.path.dirname(__file__))
 
 
-# Setup the schemas used by the test cases
-class AccountModel(DictModel):
-    """ Schema for the Account Entity"""
-
-    class Meta:
-        """ Meta class for schema options"""
-        entity = Account
-        schema_name = 'accounts'
+def pytest_addoption(parser):
+    """Additional options for running tests with pytest"""
+    parser.addoption(
+        "--slow", action="store_true", default=False, help="run slow tests"
+    )
 
 
-class SessionModel(DictModel):
-    """ Schema for the Session Entity"""
+def pytest_collection_modifyitems(config, items):
+    """Configure special markers on tests, so as to control execution"""
+    if config.getoption("--slow"):
+        # --slow given in cli: do not skip slow tests
+        return
+    skip_slow = pytest.mark.skip(reason="need --slow option to run")
+    for item in items:
+        if "slow" in item.keywords:
+            item.add_marker(skip_slow)
 
-    class Meta:
-        """ Meta class for schema options"""
-        entity = Session
-        schema_name = 'sessions'
+
+@pytest.fixture(scope="session", autouse=True)
+def register_models():
+    """Register Test Models with Dict Repo
+
+       Run only once for the entire test suite
+    """
+    from protean.core.repository import repo_factory
+    from authentic.entities import Account
+    from authentic.entities import Session
+
+    repo_factory.register(Account)
+    repo_factory.register(Session)
 
 
-repo_factory.register(AccountModel)
-repo_factory.register(SessionModel)
+@pytest.fixture(autouse=True)
+def run_around_tests():
+    """Cleanup Database after each test run"""
+    from protean.core.repository import repo_factory
+    from authentic.entities import Account
+    from authentic.entities import Session
+
+    # A test function will be run at this point
+    yield
+
+    repo_factory.get_repository(Account).delete_all()
+    repo_factory.get_repository(Session).delete_all()

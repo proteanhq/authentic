@@ -65,7 +65,7 @@ setup(
         'click==7.0',
         'passlib==1.7.1',
         'pyotp==2.2.6',
-        'protean==0.0.9',
+        'protean==0.0.11',
         'pyjwt==1.7.1'
     ],
     extras_require={

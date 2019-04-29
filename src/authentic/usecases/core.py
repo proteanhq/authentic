@@ -385,6 +385,7 @@ class LoginUseCase(UseCase):
 
     def process_request(self, request_object):
         """Process Login Request"""
+        # FIXME Use `OR` condition for `username` or `email` query
         account = Account.query.filter(
             username=request_object.username_or_email).first
         if not account:
