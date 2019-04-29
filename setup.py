@@ -51,7 +51,7 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Operating System :: OS/2',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3 :: Only',
         'Topic :: Database',
         'Topic :: Software Development :: Libraries',
@@ -66,7 +66,7 @@ setup(
         'passlib==1.7.1',
         'pyotp==2.2.6',
         'protean==0.0.9',
-        'pyjwt==1.6.4'
+        'pyjwt==1.7.1'
     ],
     extras_require={
         # eg:
