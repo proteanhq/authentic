@@ -1,21 +1,21 @@
 """ Test the usecases supplied by the authentic application """
 import base64
+import pytest
 
 from passlib.hash import pbkdf2_sha256
 from protean.core.tasklet import Tasklet
 
 from authentic.backends import basic
-
-from ..conftest import Account
+from authentic.entities import Account
 
 
 class TestAuthenticBackends:
     """ Test the usecases of Authentic"""
 
-    @classmethod
-    def setup_class(cls):
-        """ Setup instructions for this test case set """
-        cls.account = Account.create({
+    @pytest.fixture(scope="function")
+    def account(self):
+        """Setup account to use in test cases"""
+        account = Account.create({
             'email': 'johndoe@domain.com',
             'username': 'johndoe',
             'name': 'john doe',
@@ -23,13 +23,9 @@ class TestAuthenticBackends:
             'phone': '90080000800',
             'roles': ['ADMIN']
         })
+        yield account
 
-    @classmethod
-    def teardown_class(cls):
-        """ Tear down instructions for this test case set"""
-        cls.account.delete()
-
-    def test_backend(self):
+    def test_backend(self, account):
         """ Test http basic authentication backend """
         payload = {
             'auth_scheme': 'Basic',
@@ -51,4 +47,4 @@ class TestAuthenticBackends:
             basic.AuthenticationRequestObject, payload.copy())
         assert response is not None
         assert response.success is True
-        assert response.value.id is self.account.id
+        assert response.value.id is account.id
