@@ -28,7 +28,7 @@ def read(*names, **kwargs):
 
 setup(
     name='authentic',
-    version='0.0.9',
+    version='0.0.11',
     license='BSD 3-Clause License',
     description='Comprehensive Authentication Package',
     long_description='%s\n%s' % (
