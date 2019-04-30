@@ -1,7 +1,7 @@
 """ Test the usecases supplied by the JWT Backend """
 import os
-import pytest
 
+import pytest
 from passlib.hash import pbkdf2_sha256
 from protean.conf import active_config
 from protean.core.tasklet import Tasklet

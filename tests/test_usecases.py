@@ -1,10 +1,10 @@
 """ Test the usecases supplied by the authentic application """
 import pytest
-
 from passlib.hash import pbkdf2_sha256
 from protean.core.tasklet import Tasklet
 from protean.services import email
 
+from authentic.entities import Account
 from authentic.usecases import ChangeAccountPasswordRequestObject
 from authentic.usecases import ChangeAccountPasswordUseCase
 from authentic.usecases import CreateAccountRequestObject
@@ -19,8 +19,6 @@ from authentic.usecases import SendResetPasswordEmailRequestObject
 from authentic.usecases import SendResetPasswordEmailUsecase
 from authentic.usecases import UpdateAccountRequestObject
 from authentic.usecases import UpdateAccountUseCase
-
-from authentic.entities import Account
 
 
 class TestAuthenticUsecases:

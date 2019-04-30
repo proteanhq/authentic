@@ -1,7 +1,7 @@
 """ Test the usecases supplied by the authentic application """
 import base64
-import pytest
 
+import pytest
 from passlib.hash import pbkdf2_sha256
 from protean.core.tasklet import Tasklet
 
