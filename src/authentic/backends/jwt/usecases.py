@@ -119,14 +119,20 @@ class AuthenticationUseCase(UseCase):
                 Status.UNAUTHORIZED, {'credentials': f'Invalid JWT Token. {e}'})
 
         # Find the identity in the decoded jwt
-        identity = jwt_data.get(active_config.JWT_IDENTITY_CLAIM, None)
-
+        
         try:
             if jwt_data.get('id'):
                 account = self.repo.filter(username=jwt_data.get('id')).first
-                account = self.repo.get(account.id)
-            else:
-                account = self.repo.get(identity.get('account_id'))
+                jwt_data[active_config.JWT_IDENTITY_CLAIM] = {'account_id': account.id}
+                repo.SessionSchema.create(
+                    session_key=f'token-{account.id}'
+                                f'-{jwt_data["jti"]}',
+                    session_data={},
+                    expire_date=datetime.utcnow() +
+                                active_config.JWT_ACCESS_TOKEN_EXPIRES
+                )
+            identity = jwt_data.get(active_config.JWT_IDENTITY_CLAIM, None)
+            account = self.repo.get(identity.get('account_id'))
         except (ObjectNotFoundError, AttributeError):
             return ResponseFailure(
                 Status.UNAUTHORIZED,
