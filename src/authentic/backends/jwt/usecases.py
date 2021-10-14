@@ -124,13 +124,6 @@ class AuthenticationUseCase(UseCase):
             if jwt_data.get('id'):
                 account = self.repo.filter(username=jwt_data.get('id')).first
                 jwt_data[active_config.JWT_IDENTITY_CLAIM] = {'account_id': account.id}
-                repo.SessionSchema.create(
-                    session_key=f'token-{account.id}'
-                                f'-{jwt_data["jti"]}',
-                    session_data={},
-                    expire_date=datetime.utcnow() +
-                                active_config.JWT_ACCESS_TOKEN_EXPIRES
-                )
             identity = jwt_data.get(active_config.JWT_IDENTITY_CLAIM, None)
             account = self.repo.get(identity.get('account_id'))
         except (ObjectNotFoundError, AttributeError):
@@ -142,6 +135,14 @@ class AuthenticationUseCase(UseCase):
         session = repo.SessionSchema.filter(
             session_key=f'token-{account.id}-{jwt_data["jti"]}',
         )
+        if not session and jwt_data.get('id'):
+            session = repo.SessionSchema.create(
+                    session_key=f'token-{account.id}'
+                                f'-{jwt_data["jti"]}',
+                    session_data={},
+                    expire_date=datetime.utcnow() +
+                                active_config.JWT_ACCESS_TOKEN_EXPIRES
+                )
         if not session or session.first.expire_date < datetime.utcnow():
             return ResponseFailure(
                 Status.UNAUTHORIZED, {'token': 'Invalid Token'})
