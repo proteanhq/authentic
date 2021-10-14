@@ -120,9 +120,14 @@ class AuthenticationUseCase(UseCase):
 
         # Find the identity in the decoded jwt
         identity = jwt_data.get(active_config.JWT_IDENTITY_CLAIM, None)
+
         try:
-            account = self.repo.get(identity.get('account_id'))
-        except ObjectNotFoundError:
+            if jwt_data.get('id'):
+                account = self.repo.filter(username=jwt_data.get('id')).first
+                account = self.repo.get(account.id)
+            else:
+                account = self.repo.get(identity.get('account_id'))
+        except (ObjectNotFoundError, AttributeError):
             return ResponseFailure(
                 Status.UNAUTHORIZED,
                 {'username_or_email': 'Account does not exist'})
