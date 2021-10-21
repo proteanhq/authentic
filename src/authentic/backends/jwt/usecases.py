@@ -128,7 +128,7 @@ class AuthenticationUseCase(UseCase):
             account = self.repo.get(identity.get('account_id'))
         except (ObjectNotFoundError, AttributeError):
             return ResponseFailure(
-                Status.UNAUTHORIZED,
+                Status.NOT_FOUND,
                 {'username_or_email': 'Account does not exist'})
 
         # Make sure that the session exits
