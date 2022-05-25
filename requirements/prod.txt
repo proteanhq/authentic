@@ -1,5 +1,5 @@
 click==7.0
 passlib==1.7.1
 protean==0.0.11
-pyjwt==1.7.1
+pyjwt==2.4.0
 pyotp==2.2.6
