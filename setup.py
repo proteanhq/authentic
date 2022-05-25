@@ -66,7 +66,7 @@ setup(
         'passlib==1.7.1',
         'pyotp==2.2.6',
         'protean==0.0.11',
-        'pyjwt==1.7.1'
+        'pyjwt==2.4.0'
     ],
     extras_require={
         # eg:
